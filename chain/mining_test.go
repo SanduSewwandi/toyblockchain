@@ -8,7 +8,6 @@ import (
 	"toyblockchain/ledger"
 )
 
-
 func TestMineBlock(t *testing.T) {
 
 	tx := []ledger.Transaction{
@@ -71,7 +70,6 @@ func TestMineBlockChangesNonce(t *testing.T) {
 		2,
 	)
 
-	
 	if b.Nonce == initialNonce {
 
 		t.Log(
@@ -113,4 +111,36 @@ func TestDifferentDifficulty(t *testing.T) {
 		)
 	}
 
+}
+
+// Test that the mined nonce reproduces the exact stored hash.
+func TestNonceReproducesMinedHash(t *testing.T) {
+
+	b := block.NewBlock(
+		1,
+		[]ledger.Transaction{},
+		"previous_hash",
+	)
+
+	difficulty := 3
+
+	MineBlock(
+		&b,
+		difficulty,
+	)
+
+
+	// Recalculate hash using the mined nonce.
+	recalculatedHash := b.CalculateHash()
+
+
+	// The recalculated hash must equal the stored hash.
+	if recalculatedHash != b.Hash {
+
+		t.Errorf(
+			"Nonce does not reproduce mined hash\nStored: %s\nCalculated: %s",
+			b.Hash,
+			recalculatedHash,
+		)
+	}
 }

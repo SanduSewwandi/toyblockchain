@@ -10,17 +10,31 @@ import (
 // GenesisPreviousHash is the fixed previous hash used by the genesis block.
 const GenesisPreviousHash = "0000000000000000000000000000000000000000000000000000000000000000"
 
-
 type Blockchain struct {
 	Blocks []block.Block
 }
 
-
 func NewBlockchain() *Blockchain {
+
+	genesisTransactions := []ledger.Transaction{
+
+		{
+			// Empty sender represents system/faucet creation.
+			Sender:   "",
+			Receiver: "Alice",
+			Amount:   100,
+		},
+
+		{
+			Sender:   "",
+			Receiver: "Bob",
+			Amount:   50,
+		},
+	}
 
 	genesis := block.NewBlock(
 		0,
-		[]ledger.Transaction{},
+		genesisTransactions,
 		GenesisPreviousHash,
 	)
 
@@ -38,7 +52,6 @@ func (bc *Blockchain) GetLatestBlock() block.Block {
 
 	return bc.Blocks[len(bc.Blocks)-1]
 }
-
 
 func (bc *Blockchain) AddBlock(
 	transactions []ledger.Transaction,
@@ -97,10 +110,16 @@ func (bc *Blockchain) Print() {
 
 			for i, tx := range b.Transactions {
 
+				sender := tx.Sender
+
+				if sender == "" {
+					sender = "SYSTEM"
+				}
+
 				fmt.Printf(
 					"  %d. %s -> %s : %.2f\n",
 					i+1,
-					tx.Sender,
+					sender,
 					tx.Receiver,
 					tx.Amount,
 				)
@@ -111,23 +130,25 @@ func (bc *Blockchain) Print() {
 	}
 }
 
-// BuildLedger reconstructs account balances from the blockchain.
+// BuildLedger reconstructs balances only from blockchain transactions.
+//
+// No balances are stored separately.
+// The ledger is created by replaying every transaction in every block.
 func (bc *Blockchain) BuildLedger() *ledger.Ledger {
 
 	ld := ledger.NewLedger()
 
-	// Initial balances (faucet)
-	ld.Credit("Alice", 100)
-	ld.Credit("Bob", 50)
-
-	// Replay all transactions from blockchain
+	// Replay all transactions from blockchain.
 	for _, b := range bc.Blocks {
 
 		for _, tx := range b.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {
 
-				fmt.Println("Warning:", err)
+				fmt.Println(
+					"Warning:",
+					err,
+				)
 
 			}
 		}

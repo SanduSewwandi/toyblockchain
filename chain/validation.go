@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-
 func (bc *Blockchain) ValidateChain() (bool, string) {
 
 	// Use default mining difficulty
@@ -15,8 +14,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 
 		current := bc.Blocks[i]
 
-		
-		
 		if current.CalculateHash() != current.Hash {
 
 			return false, fmt.Sprintf(
@@ -25,7 +22,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		if i == 0 {
 
 			if current.Index != 0 {
@@ -39,7 +35,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 
 		previous := bc.Blocks[i-1]
 
-		
 		if current.PreviousHash != previous.Hash {
 
 			return false, fmt.Sprintf(
@@ -48,7 +43,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		if current.Index != previous.Index+1 {
 
 			return false, fmt.Sprintf(
@@ -57,7 +51,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-	
 		// 5. Verify timestamp order
 		if current.Timestamp < previous.Timestamp {
 
@@ -67,9 +60,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		// 6. Verify Proof-of-Work
-				if !strings.HasPrefix(current.Hash, target) {
+		if !strings.HasPrefix(current.Hash, target) {
 
 			return false, fmt.Sprintf(
 				"Block %d: invalid proof-of-work",

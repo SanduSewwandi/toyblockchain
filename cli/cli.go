@@ -21,7 +21,6 @@ func Run() {
 	// Build ledger from blockchain
 	ld := blockchain.BuildLedger()
 
-	
 	// Load pending transactions
 	pendingTransactions, err := chain.LoadPending(chain.DefaultPendingFile)
 	if err != nil {

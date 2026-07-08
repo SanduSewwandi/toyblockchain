@@ -8,9 +8,7 @@ import (
 	"toyblockchain/block"
 )
 
-
 const DefaultDifficulty = 4
-
 
 func MineBlock(b *block.Block, difficulty int) {
 
@@ -35,7 +33,6 @@ func MineBlock(b *block.Block, difficulty int) {
 			break
 		}
 
-		
 		b.Nonce++
 	}
 

@@ -24,7 +24,6 @@ func (bc *Blockchain) SaveToFile(filename string) error {
 	return nil
 }
 
-
 func LoadFromFile(filename string) (*Blockchain, error) {
 
 	// First run: create a new blockchain.
@@ -40,7 +39,6 @@ func LoadFromFile(filename string) (*Blockchain, error) {
 		return bc, nil
 	}
 
-	
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read blockchain: %w", err)
