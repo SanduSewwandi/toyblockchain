@@ -9,7 +9,7 @@ import (
 	"toyblockchain/ledger"
 )
 
-// Block represents a single block in the blockchain.
+
 type Block struct {
 	Index        int
 	Timestamp    int64
@@ -19,16 +19,7 @@ type Block struct {
 	Hash         string
 }
 
-// CalculateHash computes the SHA-256 hash of the block.
-//
-// The following fields are included in this order:
-// 1. Index
-// 2. Timestamp
-// 3. Transactions
-// 4. PreviousHash
-// 5. Nonce
-//
-// The Hash field itself is NOT included.
+
 func (b *Block) CalculateHash() string {
 
 	data := struct {
@@ -55,11 +46,7 @@ func (b *Block) CalculateHash() string {
 	return hex.EncodeToString(hash[:])
 }
 
-// NewBlock creates a new block.
-//
-// The block starts with Nonce = 0.
-// Mining will later modify the nonce until the
-// required Proof-of-Work difficulty is satisfied.
+
 func NewBlock(index int, txs []ledger.Transaction, previousHash string) Block {
 
 	newBlock := Block{

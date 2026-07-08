@@ -11,23 +11,18 @@ import (
 
 func Run() {
 
-	// ------------------------------------
 	// Load blockchain from disk
-	// ------------------------------------
 	blockchain, err := chain.LoadFromFile(chain.DefaultBlockchainFile)
 	if err != nil {
 		fmt.Println("Error loading blockchain:", err)
 		return
 	}
 
-	// ------------------------------------
 	// Build ledger from blockchain
-	// ------------------------------------
 	ld := blockchain.BuildLedger()
 
-	// ------------------------------------
+	
 	// Load pending transactions
-	// ------------------------------------
 	pendingTransactions, err := chain.LoadPending(chain.DefaultPendingFile)
 	if err != nil {
 		fmt.Println("Error loading pending transactions:", err)
@@ -72,9 +67,7 @@ func Run() {
 			Amount: amount,
 		}
 
-		// ------------------------------------
 		// Validate transaction with pending pool
-		// ------------------------------------
 
 		// Create temporary ledger copy
 		tempLedger := ld.Clone()
@@ -150,8 +143,6 @@ func Run() {
 		difficulty := chain.DefaultDifficulty
 
 		// Custom difficulty
-		// Example:
-		// go run main.go mine 5
 		if len(args) >= 3 {
 
 			value, err := strconv.Atoi(args[2])

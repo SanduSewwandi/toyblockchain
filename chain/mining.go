@@ -8,13 +8,10 @@ import (
 	"toyblockchain/block"
 )
 
-// Default mining difficulty.
-// A valid block hash must start with this many zeros.
+
 const DefaultDifficulty = 4
 
-// MineBlock performs the Proof-of-Work algorithm.
-// It repeatedly increments the nonce until the
-// block hash satisfies the required difficulty.
+
 func MineBlock(b *block.Block, difficulty int) {
 
 	// Target prefix (example: "0000")
@@ -38,7 +35,7 @@ func MineBlock(b *block.Block, difficulty int) {
 			break
 		}
 
-		// Try next nonce.
+		
 		b.Nonce++
 	}
 

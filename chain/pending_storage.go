@@ -8,7 +8,7 @@ import (
 	"toyblockchain/ledger"
 )
 
-// DefaultPendingFile stores unconfirmed transactions.
+
 const DefaultPendingFile = "pending.json"
 
 // SavePending saves pending transactions to a JSON file.
@@ -26,8 +26,7 @@ func SavePending(filename string, transactions []ledger.Transaction) error {
 	return nil
 }
 
-// LoadPending loads pending transactions from JSON file.
-// If the file does not exist, it creates an empty pending pool.
+
 func LoadPending(filename string) ([]ledger.Transaction, error) {
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
