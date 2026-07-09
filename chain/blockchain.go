@@ -60,6 +60,16 @@ func (bc *Blockchain) AddBlock(
 	difficulty int,
 ) error {
 
+	// Enforce configurable maximum block size (FR-9).
+	if len(transactions) > DefaultBlockSize {
+
+		return fmt.Errorf(
+			"block contains %d transactions, maximum allowed is %d",
+			len(transactions),
+			DefaultBlockSize,
+		)
+	}
+
 	latest := bc.GetLatestBlock()
 
 	newBlock := block.NewBlock(

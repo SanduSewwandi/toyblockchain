@@ -6,9 +6,6 @@ import (
 	"os"
 )
 
-// DefaultBlockchainFile is the default JSON file used to store the blockchain.
-const DefaultBlockchainFile = "blockchain.json"
-
 // SaveToFile writes the blockchain to a JSON file.
 func (bc *Blockchain) SaveToFile(filename string) error {
 
@@ -24,6 +21,9 @@ func (bc *Blockchain) SaveToFile(filename string) error {
 	return nil
 }
 
+// LoadFromFile loads the blockchain from a JSON file.
+// If the file does not exist, a new blockchain containing
+// the genesis block is created and saved.
 func LoadFromFile(filename string) (*Blockchain, error) {
 
 	// First run: create a new blockchain.

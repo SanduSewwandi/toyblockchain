@@ -8,9 +8,10 @@ import (
 	"toyblockchain/block"
 )
 
-const DefaultDifficulty = 4
-
 func MineBlock(b *block.Block, difficulty int) {
+
+	// Store the difficulty in the block.
+	b.Difficulty = difficulty
 
 	// Target prefix (example: "0000")
 	target := strings.Repeat("0", difficulty)
@@ -33,6 +34,7 @@ func MineBlock(b *block.Block, difficulty int) {
 			break
 		}
 
+		// Try the next nonce.
 		b.Nonce++
 	}
 

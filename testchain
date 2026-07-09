@@ -1,0 +1,24 @@
+{
+    "Blocks": [
+        {
+            "Index": 0,
+            "Timestamp": 1783576746,
+            "Transactions": [
+                {
+                    "Sender": "",
+                    "Receiver": "Alice",
+                    "Amount": 100
+                },
+                {
+                    "Sender": "",
+                    "Receiver": "Bob",
+                    "Amount": 50
+                }
+            ],
+            "PreviousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "Nonce": 0,
+            "Hash": "83873fbb4ed754b78067a7ac208e1bb336d7b611648cd6089dd33568dc6417ac",
+            "Difficulty": 4
+        }
+    ]
+}

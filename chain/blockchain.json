@@ -2,7 +2,7 @@
     "Blocks": [
         {
             "Index": 0,
-            "Timestamp": 1783509575,
+            "Timestamp": 1783584529,
             "Transactions": [
                 {
                     "Sender": "",
@@ -17,11 +17,12 @@
             ],
             "PreviousHash": "0000000000000000000000000000000000000000000000000000000000000000",
             "Nonce": 0,
-            "Hash": "5ba014497d6b181cef835f4e03a7af961b58bfcbd091b3f8602a04da899fa6dc"
+            "Hash": "57ab9fce4494af0494a51069a6f191cf51a53d6c107ec64b57acb0d202e7e095",
+            "Difficulty": 4
         },
         {
             "Index": 1,
-            "Timestamp": 1783509575,
+            "Timestamp": 1783584529,
             "Transactions": [
                 {
                     "Sender": "Alice",
@@ -29,9 +30,10 @@
                     "Amount": 10
                 }
             ],
-            "PreviousHash": "5ba014497d6b181cef835f4e03a7af961b58bfcbd091b3f8602a04da899fa6dc",
-            "Nonce": 48336,
-            "Hash": "000053168d522da008332f389b907ce347a45fbc73123e7ca859be5de61c3dac"
+            "PreviousHash": "57ab9fce4494af0494a51069a6f191cf51a53d6c107ec64b57acb0d202e7e095",
+            "Nonce": 26965,
+            "Hash": "00004637a4f5f716cb24b29596fb4d1de81a8439beb28dbb92b6e1692199628e",
+            "Difficulty": 4
         }
     ]
 }
