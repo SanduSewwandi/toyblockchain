@@ -1,3 +1,12 @@
+# Compiled binary
+toyblockchain
+toyblockchain.exe
+
+# Runtime state files (regenerated on first run)
+blockchain.json
 chain/blockchain.json
 pending.json
+testchain
+
+# Test artifacts
 test_*.json

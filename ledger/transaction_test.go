@@ -2,54 +2,65 @@ package ledger
 
 import "testing"
 
-func TestTransactionCreation(t *testing.T) {
+// TestApplyTransactionRejectsNonPositiveAmount verifies that transactions
+// with zero or negative amounts are rejected before any balance changes.
+func TestApplyTransactionRejectsNonPositiveAmount(t *testing.T) {
 
-	tx := Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   50,
+	l := NewLedger()
+	l.Credit("Alice", 100)
+
+	cases := []Transaction{
+		{Sender: "Alice", Receiver: "Bob", Amount: 0},
+		{Sender: "Alice", Receiver: "Bob", Amount: -10},
 	}
 
-	if tx.Sender != "Alice" {
-		t.Errorf("expected sender Alice, got %s", tx.Sender)
-	}
+	for _, tx := range cases {
 
-	if tx.Receiver != "Bob" {
-		t.Errorf("expected receiver Bob, got %s", tx.Receiver)
-	}
+		err := l.ApplyTransaction(tx)
 
-	if tx.Amount != 50 {
-		t.Errorf("expected amount 50, got %f", tx.Amount)
-	}
+		if err == nil {
+			t.Errorf(
+				"expected transaction with amount %d to be rejected",
+				tx.Amount,
+			)
+		}
 
+		if l.GetBalance("Alice") != 100 {
+			t.Errorf(
+				"Alice balance should remain unchanged after rejected tx, got %d",
+				l.GetBalance("Alice"),
+			)
+		}
+
+		if l.GetBalance("Bob") != 0 {
+			t.Errorf(
+				"Bob should not receive funds from a rejected tx, got %d",
+				l.GetBalance("Bob"),
+			)
+		}
+	}
 }
 
-func TestTransactionEmptySender(t *testing.T) {
+// TestApplyTransactionMintsWithEmptySender verifies that a transaction with
+// an empty sender (the coinbase/faucet convention) credits the receiver
+// without requiring or debiting any balance.
+func TestApplyTransactionMintsWithEmptySender(t *testing.T) {
+
+	l := NewLedger()
 
 	tx := Transaction{
+		Sender:   "",
 		Receiver: "Alice",
+		Amount:   100,
 	}
 
-	if tx.Sender != "" {
-		t.Error("expected empty sender")
+	err := l.ApplyTransaction(tx)
+
+	if err != nil {
+		t.Fatalf("expected empty-sender mint to succeed, got error: %v", err)
 	}
 
-	if tx.Receiver != "Alice" {
-		t.Error("receiver mismatch")
+	if l.GetBalance("Alice") != 100 {
+		t.Errorf("expected Alice balance 100, got %d", l.GetBalance("Alice"))
 	}
-
-}
-
-func TestTransactionInvalidAmount(t *testing.T) {
-
-	tx := Transaction{
-		Amount: -5,
-	}
-
-	if tx.Amount >= 0 {
-		t.Error(
-			"negative transaction amount should be invalid",
-		)
-	}
-
 }

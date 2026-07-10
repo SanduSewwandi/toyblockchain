@@ -47,11 +47,11 @@ func (b *Block) CalculateHash() string {
 	return hex.EncodeToString(hash[:])
 }
 
-func NewBlock(index int, txs []ledger.Transaction, previousHash string, difficulty int) Block {
+func NewBlockWithTimestamp(index int, txs []ledger.Transaction, previousHash string, difficulty int, timestamp int64) Block {
 
 	newBlock := Block{
 		Index:        index,
-		Timestamp:    time.Now().Unix(),
+		Timestamp:    timestamp,
 		Transactions: txs,
 		PreviousHash: previousHash,
 		Nonce:        0,
@@ -61,4 +61,9 @@ func NewBlock(index int, txs []ledger.Transaction, previousHash string, difficul
 	newBlock.Hash = newBlock.CalculateHash()
 
 	return newBlock
+}
+
+func NewBlock(index int, txs []ledger.Transaction, previousHash string, difficulty int) Block {
+
+	return NewBlockWithTimestamp(index, txs, previousHash, difficulty, time.Now().Unix())
 }

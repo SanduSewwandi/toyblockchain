@@ -29,7 +29,7 @@ func TestRejectOverspending(t *testing.T) {
 
 	if aliceBalance != 100 {
 		t.Errorf(
-			"expected Alice balance to remain 100, got %.2f",
+			"expected Alice balance to remain 100, got %d",
 			aliceBalance,
 		)
 	}
@@ -39,7 +39,7 @@ func TestRejectOverspending(t *testing.T) {
 
 	if bobBalance != 0 {
 		t.Errorf(
-			"expected Bob balance to remain 0, got %.2f",
+			"expected Bob balance to remain 0, got %d",
 			bobBalance,
 		)
 	}

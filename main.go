@@ -35,6 +35,19 @@ func main() {
 
 	flag.Parse()
 
+	
+	if chain.DefaultDifficulty < chain.MinDifficulty {
+
+		fmt.Printf(
+			"Difficulty %d is below the minimum of %d — using %d instead.\n",
+			chain.DefaultDifficulty,
+			chain.MinDifficulty,
+			chain.MinDifficulty,
+		)
+
+		chain.DefaultDifficulty = chain.MinDifficulty
+	}
+
 	// Display active configuration
 
 	fmt.Println("===================================")

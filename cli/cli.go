@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"toyblockchain/chain"
 	"toyblockchain/ledger"
 )
+
+func isValidSender(sender string) bool {
+
+	return sender != "" && !strings.EqualFold(sender, "SYSTEM")
+}
 
 func Run() {
 
@@ -89,8 +95,18 @@ func Run() {
 			return
 		}
 
-		amount, err := strconv.ParseFloat(
+		if !isValidSender(args[1]) {
+
+			fmt.Println(
+				"Invalid sender: cannot mint funds from an empty or reserved sender",
+			)
+
+			return
+		}
+
+		amount, err := strconv.ParseInt(
 			args[3],
+			10,
 			64,
 		)
 
@@ -182,15 +198,39 @@ func Run() {
 			return
 		}
 
-		if len(pendingTransactions) >
-			chain.DefaultBlockSize {
+		toMine := pendingTransactions
+		remaining := []ledger.Transaction{}
 
-			fmt.Printf(
-				"Too many transactions. Maximum block size is %d\n",
-				chain.DefaultBlockSize,
-			)
+		if len(pendingTransactions) > chain.DefaultBlockSize {
 
-			return
+			toMine = pendingTransactions[:chain.DefaultBlockSize]
+			remaining = pendingTransactions[chain.DefaultBlockSize:]
+		}
+
+		
+		tempLedger := ld.Clone()
+
+		for _, pending := range toMine {
+
+			if !isValidSender(pending.Sender) {
+
+				fmt.Println(
+					"Pending pool contains a transaction with an invalid sender, aborting mine:",
+					pending,
+				)
+
+				return
+			}
+
+			if err := tempLedger.ApplyTransaction(pending); err != nil {
+
+				fmt.Println(
+					"Pending pool contains an invalid transaction, aborting mine:",
+					err,
+				)
+
+				return
+			}
 		}
 
 		fmt.Println(
@@ -199,7 +239,7 @@ func Run() {
 		)
 
 		err := blockchain.AddBlock(
-			pendingTransactions,
+			toMine,
 			chain.DefaultDifficulty,
 		)
 
@@ -207,6 +247,17 @@ func Run() {
 
 			fmt.Println(
 				"Mining failed:",
+				err,
+			)
+
+			return
+		}
+
+		// AddBlock no longer saves as a side effect — save explicitly.
+		if err := blockchain.SaveToFile(chain.DefaultBlockchainFile); err != nil {
+
+			fmt.Println(
+				"Error saving blockchain:",
 				err,
 			)
 
@@ -222,14 +273,25 @@ func Run() {
 			chain.DefaultBlockchainFile,
 		)
 
-		if err := chain.ClearPending(chain.DefaultPendingFile); err != nil {
+		if err := chain.SavePending(
+			chain.DefaultPendingFile,
+			remaining,
+		); err != nil {
 
 			fmt.Println(
-				"Error clearing pending transactions:",
+				"Error saving pending transactions:",
 				err,
 			)
 
 			return
+		}
+
+		if len(remaining) > 0 {
+
+			fmt.Printf(
+				"%d transaction(s) remain pending for the next block.\n",
+				len(remaining),
+			)
 		}
 
 	case "print":
@@ -291,6 +353,17 @@ func Run() {
 			[]ledger.Transaction{tx2},
 			chain.DefaultDifficulty,
 		)
+
+		// AddBlock no longer saves as a side effect — save explicitly.
+		if err := blockchain.SaveToFile(chain.DefaultBlockchainFile); err != nil {
+
+			fmt.Println(
+				"Error saving blockchain:",
+				err,
+			)
+
+			return
+		}
 
 		blockchain.Print()
 

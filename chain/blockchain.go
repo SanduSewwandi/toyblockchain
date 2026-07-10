@@ -10,6 +10,8 @@ import (
 // GenesisPreviousHash is the fixed previous hash used by the genesis block.
 const GenesisPreviousHash = "0000000000000000000000000000000000000000000000000000000000000000"
 
+const GenesisTimestamp int64 = 0
+
 type Blockchain struct {
 	Blocks []block.Block
 }
@@ -31,12 +33,12 @@ func NewBlockchain() *Blockchain {
 			Amount:   50,
 		},
 	}
-
-	genesis := block.NewBlock(
+	genesis := block.NewBlockWithTimestamp(
 		0,
 		genesisTransactions,
 		GenesisPreviousHash,
 		DefaultDifficulty,
+		GenesisTimestamp,
 	)
 
 	return &Blockchain{
@@ -54,7 +56,7 @@ func (bc *Blockchain) GetLatestBlock() block.Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-// AddBlock mines a new block and appends it to the chain.
+
 func (bc *Blockchain) AddBlock(
 	transactions []ledger.Transaction,
 	difficulty int,
@@ -91,11 +93,6 @@ func (bc *Blockchain) AddBlock(
 		newBlock,
 	)
 
-	// Save blockchain.
-	if err := bc.SaveToFile(DefaultBlockchainFile); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -131,7 +128,7 @@ func (bc *Blockchain) Print() {
 				}
 
 				fmt.Printf(
-					"  %d. %s -> %s : %.2f\n",
+					"  %d. %s -> %s : %d\n",
 					i+1,
 					sender,
 					tx.Receiver,
@@ -144,10 +141,7 @@ func (bc *Blockchain) Print() {
 	}
 }
 
-// BuildLedger reconstructs balances only from blockchain transactions.
-//
-// No balances are stored separately.
-// The ledger is created by replaying every transaction in every block.
+
 func (bc *Blockchain) BuildLedger() *ledger.Ledger {
 
 	ld := ledger.NewLedger()

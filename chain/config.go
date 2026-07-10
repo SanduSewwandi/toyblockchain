@@ -13,3 +13,5 @@ var (
 	// Pending transaction persistence file.
 	DefaultPendingFile = "pending.json"
 )
+
+const MinDifficulty = 3

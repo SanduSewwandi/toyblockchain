@@ -21,9 +21,7 @@ func (bc *Blockchain) SaveToFile(filename string) error {
 	return nil
 }
 
-// LoadFromFile loads the blockchain from a JSON file.
-// If the file does not exist, a new blockchain containing
-// the genesis block is created and saved.
+
 func LoadFromFile(filename string) (*Blockchain, error) {
 
 	// First run: create a new blockchain.
@@ -54,6 +52,11 @@ func LoadFromFile(filename string) (*Blockchain, error) {
 	// Safety check.
 	if len(bc.Blocks) == 0 {
 		return NewBlockchain(), nil
+	}
+
+	
+	if valid, msg := bc.ValidateChain(); !valid {
+		return nil, fmt.Errorf("blockchain.json failed validation: %s", msg)
 	}
 
 	return &bc, nil

@@ -23,7 +23,7 @@ func TestBlockchainSaveAndLoad(t *testing.T) {
 
 	err := bc.AddBlock(
 		[]ledger.Transaction{tx},
-		2,
+		DefaultDifficulty,
 	)
 
 	if err != nil {
