@@ -35,7 +35,6 @@ func main() {
 
 	flag.Parse()
 
-
 	// Display active configuration
 
 	fmt.Println("===================================")
@@ -58,7 +57,6 @@ func main() {
 	)
 
 	fmt.Println()
-
 
 	cli.Run()
 }
