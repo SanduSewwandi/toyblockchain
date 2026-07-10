@@ -4,7 +4,50 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+// writeFileAtomic writes data to filename without ever leaving a
+// partially-written file in place. It writes to a temporary file in the
+// same directory as the target (so the following rename is guaranteed to
+// be on the same filesystem and therefore atomic), then renames it over
+// the real path. If the process crashes or loses power mid-write, the
+// original file (if any) is left untouched — the temp file may be left
+// behind, but filename itself is never corrupted.
+func writeFileAtomic(filename string, data []byte, perm os.FileMode) error {
+
+	dir := filepath.Dir(filename)
+
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	tmpName := tmp.Name()
+
+	// Ensure the temp file is cleaned up if anything below fails before
+	// the rename succeeds.
+	defer os.Remove(tmpName)
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	if err := os.Chmod(tmpName, perm); err != nil {
+		return fmt.Errorf("failed to set permissions on temp file: %w", err)
+	}
+
+	if err := os.Rename(tmpName, filename); err != nil {
+		return fmt.Errorf("failed to rename temp file into place: %w", err)
+	}
+
+	return nil
+}
 
 // SaveToFile writes the blockchain to a JSON file.
 func (bc *Blockchain) SaveToFile(filename string) error {
@@ -14,13 +57,12 @@ func (bc *Blockchain) SaveToFile(filename string) error {
 		return fmt.Errorf("failed to serialize blockchain: %w", err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := writeFileAtomic(filename, data, 0644); err != nil {
 		return fmt.Errorf("failed to save blockchain: %w", err)
 	}
 
 	return nil
 }
-
 
 func LoadFromFile(filename string) (*Blockchain, error) {
 
@@ -54,7 +96,6 @@ func LoadFromFile(filename string) (*Blockchain, error) {
 		return NewBlockchain(), nil
 	}
 
-	
 	if valid, msg := bc.ValidateChain(); !valid {
 		return nil, fmt.Errorf("blockchain.json failed validation: %s", msg)
 	}

@@ -16,7 +16,7 @@ func SavePending(filename string, transactions []ledger.Transaction) error {
 		return fmt.Errorf("failed to serialize pending transactions: %w", err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := writeFileAtomic(filename, data, 0644); err != nil {
 		return fmt.Errorf("failed to save pending transactions: %w", err)
 	}
 
