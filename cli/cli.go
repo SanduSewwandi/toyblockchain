@@ -213,22 +213,6 @@ func Run() {
 			return
 		}
 
-		// Save blockchain
-
-		err = blockchain.SaveToFile(
-			chain.DefaultBlockchainFile,
-		)
-
-		if err != nil {
-
-			fmt.Println(
-				"Error saving blockchain:",
-				err,
-			)
-
-			return
-		}
-
 		fmt.Println(
 			"Block mined successfully.",
 		)
@@ -238,9 +222,15 @@ func Run() {
 			chain.DefaultBlockchainFile,
 		)
 
-		chain.ClearPending(
-			chain.DefaultPendingFile,
-		)
+		if err := chain.ClearPending(chain.DefaultPendingFile); err != nil {
+
+			fmt.Println(
+				"Error clearing pending transactions:",
+				err,
+			)
+
+			return
+		}
 
 	case "print":
 

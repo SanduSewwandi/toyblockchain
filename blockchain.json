@@ -7,7 +7,7 @@
                 {
                     "Sender": "",
                     "Receiver": "Alice",
-                    "Amount": 1000
+                    "Amount": 100
                 },
                 {
                     "Sender": "",
@@ -154,6 +154,21 @@
             "Nonce": 741027,
             "Hash": "0000095055e993d6f44f188f1d7f04db170fc373f9383e0c28cce2a7403b677f",
             "Difficulty": 5
+        },
+        {
+            "Index": 10,
+            "Timestamp": 1783658503,
+            "Transactions": [
+                {
+                    "Sender": "Alice",
+                    "Receiver": "Bob",
+                    "Amount": 10
+                }
+            ],
+            "PreviousHash": "0000095055e993d6f44f188f1d7f04db170fc373f9383e0c28cce2a7403b677f",
+            "Nonce": 99482,
+            "Hash": "00003c57cb33e772c823b52e553d856a7723885277b497de2ca41d7ebefb9d8d",
+            "Difficulty": 4
         }
     ]
 }
