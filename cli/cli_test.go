@@ -33,7 +33,6 @@ func TestIsValidSender(t *testing.T) {
 	}
 }
 
-
 func TestMineRejectsHandEditedOverspend(t *testing.T) {
 
 	dir := t.TempDir()
@@ -57,7 +56,6 @@ func TestMineRejectsHandEditedOverspend(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	
 	badPending := []ledger.Transaction{
 		{Sender: "Alice", Receiver: "Mallory", Amount: 999999},
 	}
@@ -68,7 +66,6 @@ func TestMineRejectsHandEditedOverspend(t *testing.T) {
 	// Run the "mine" command against the tampered pending pool.
 	run([]string{"mine"})
 
-	
 	loaded, err := chain.LoadFromFile(dataFile)
 	if err != nil {
 		t.Fatalf("chain failed to reload: %v", err)
@@ -81,7 +78,6 @@ func TestMineRejectsHandEditedOverspend(t *testing.T) {
 		)
 	}
 
-	
 	stillPending, err := chain.LoadPending(pendingFile)
 	if err != nil {
 		t.Fatal(err)
