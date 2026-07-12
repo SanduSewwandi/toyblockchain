@@ -18,7 +18,10 @@ func isValidSender(sender string) bool {
 
 func Run() {
 
-	args := flag.Args()
+	run(flag.Args())
+}
+
+func run(args []string) {
 
 	if len(args) < 1 {
 		printHelp()
@@ -207,7 +210,6 @@ func Run() {
 			remaining = pendingTransactions[chain.DefaultBlockSize:]
 		}
 
-		
 		tempLedger := ld.Clone()
 
 		for _, pending := range toMine {

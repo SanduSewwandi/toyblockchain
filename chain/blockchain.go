@@ -56,7 +56,6 @@ func (bc *Blockchain) GetLatestBlock() block.Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-
 func (bc *Blockchain) AddBlock(
 	transactions []ledger.Transaction,
 	difficulty int,
@@ -140,7 +139,6 @@ func (bc *Blockchain) Print() {
 		fmt.Println("--------------------------------")
 	}
 }
-
 
 func (bc *Blockchain) BuildLedger() *ledger.Ledger {
 

@@ -71,7 +71,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			
 			if current.Difficulty < MinDifficulty {
 
 				return false, fmt.Sprintf(
@@ -100,7 +99,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
-		
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

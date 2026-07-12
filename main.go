@@ -35,7 +35,6 @@ func main() {
 
 	flag.Parse()
 
-	
 	if chain.DefaultDifficulty < chain.MinDifficulty {
 
 		fmt.Printf(
