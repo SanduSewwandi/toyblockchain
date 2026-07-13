@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-// TestGenesisCreatesInitialBalances verifies that the genesis block
-// correctly creates the initial balances through SYSTEM transactions.
 func TestGenesisCreatesInitialBalances(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -40,9 +38,6 @@ func TestGenesisCreatesInitialBalances(t *testing.T) {
 	}
 }
 
-// TestGenesisIsDeterministic verifies that the genesis block is fully
-// deterministic: two independently created blockchains must produce
-// byte-identical genesis blocks, including the same timestamp and hash.
 func TestGenesisIsDeterministic(t *testing.T) {
 
 	bc1 := NewBlockchain()

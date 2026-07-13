@@ -7,13 +7,6 @@ import (
 	"path/filepath"
 )
 
-// writeFileAtomic writes data to filename without ever leaving a
-// partially-written file in place. It writes to a temporary file in the
-// same directory as the target (so the following rename is guaranteed to
-// be on the same filesystem and therefore atomic), then renames it over
-// the real path. If the process crashes or loses power mid-write, the
-// original file (if any) is left untouched — the temp file may be left
-// behind, but filename itself is never corrupted.
 func writeFileAtomic(filename string, data []byte, perm os.FileMode) error {
 
 	dir := filepath.Dir(filename)
@@ -26,7 +19,6 @@ func writeFileAtomic(filename string, data []byte, perm os.FileMode) error {
 	tmpName := tmp.Name()
 
 	// Ensure the temp file is cleaned up if anything below fails before
-	// the rename succeeds.
 	defer os.Remove(tmpName)
 
 	if _, err := tmp.Write(data); err != nil {

@@ -40,8 +40,6 @@ func TestMineRejectsHandEditedOverspend(t *testing.T) {
 	dataFile := filepath.Join(dir, "blockchain.json")
 	pendingFile := filepath.Join(dir, "pending.json")
 
-	// Point the package-level config at isolated temp files so this test
-	// can't interfere with other tests or leave artifacts behind.
 	oldData, oldPending := chain.DefaultBlockchainFile, chain.DefaultPendingFile
 	chain.DefaultBlockchainFile = dataFile
 	chain.DefaultPendingFile = pendingFile

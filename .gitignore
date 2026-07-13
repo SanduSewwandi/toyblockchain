@@ -10,3 +10,6 @@ testchain
 
 # Test artifacts
 test_*.json
+
+demo_test.json
+trial

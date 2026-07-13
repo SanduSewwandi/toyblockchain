@@ -40,8 +40,6 @@ func TestValidateValidChain(t *testing.T) {
 
 }
 
-// Test tampering detection (hash-integrity branch — this one was always correct,
-// since the transaction edit deliberately leaves Hash stale).
 func TestValidateDetectsTampering(t *testing.T) {
 
 	bc := NewBlockchain()
