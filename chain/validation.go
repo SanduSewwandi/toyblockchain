@@ -12,7 +12,6 @@ import (
 func (bc *Blockchain) ValidateChain() (bool, string) {
 
 	if len(bc.Blocks) == 0 {
-
 		return false, "Blockchain is empty"
 	}
 
@@ -48,22 +47,18 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 		if i == 0 {
 
 			if current.Index != 0 {
-
-				return false,
-					"Genesis block has invalid index"
+				return false, "Genesis block has invalid index"
 			}
 
 			if current.PreviousHash != GenesisPreviousHash {
-
-				return false,
-					"Genesis block has invalid previous hash"
+				return false, "Genesis block has invalid previous hash"
 			}
 
 		} else {
 
 			previous := bc.Blocks[i-1]
 
-			// Verify previous hash link.
+			// Previous hash connection check
 			if current.PreviousHash != previous.Hash {
 
 				return false, fmt.Sprintf(
@@ -72,7 +67,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Verify block index sequence.
+			// Block index check
 			if current.Index != previous.Index+1 {
 
 				return false, fmt.Sprintf(
@@ -81,7 +76,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Verify timestamp ordering.
+			// Timestamp check
 			if current.Timestamp < previous.Timestamp {
 
 				return false, fmt.Sprintf(
@@ -90,18 +85,16 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Verify difficulty value.
+			// Difficulty check
 			if current.Difficulty < MinDifficulty {
 
 				return false, fmt.Sprintf(
-					"Block %d: difficulty %d below minimum %d",
+					"Block %d: difficulty below minimum",
 					i,
-					current.Difficulty,
-					MinDifficulty,
 				)
 			}
 
-			// Verify Proof-of-Work.
+			// Proof of Work check
 			target := strings.Repeat(
 				"0",
 				current.Difficulty,
@@ -119,7 +112,10 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
-		// Replay transactions to verify ledger consistency.
+		// Verify transactions. Signature validity and identity binding
+		// (matching each sender to their registered public key) are
+		// both checked inside ApplyTransaction, so a single call here
+		// covers everything: signature, identity, and balance.
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

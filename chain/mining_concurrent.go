@@ -10,7 +10,6 @@ import (
 	"toyblockchain/block"
 )
 
-
 func MineBlockConcurrent(b *block.Block, difficulty int, numWorkers int) {
 
 	if numWorkers < 1 {
@@ -71,14 +70,7 @@ func MineBlockConcurrent(b *block.Block, difficulty int, numWorkers int) {
 
 	elapsed := time.Since(start)
 
-	resultValue := winner.Load()
-
-	if resultValue == nil {
-		panic("mining failed: no worker found a valid nonce")
-	}
-
-	result := resultValue.(block.Block)
-
+	result := winner.Load().(block.Block)
 	b.Nonce = result.Nonce
 	b.Hash = result.Hash
 

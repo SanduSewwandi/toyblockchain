@@ -13,18 +13,16 @@ func TestValidateValidChain(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
-
-	err := bc.AddBlock(
-		[]ledger.Transaction{tx},
-		DefaultDifficulty,
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
 	)
 
-	if err != nil {
+	if err := bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,18 +42,20 @@ func TestValidateDetectsTransactionTampering(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
-
-	bc.AddBlock(
-		[]ledger.Transaction{tx},
-		DefaultDifficulty,
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
 	)
 
-	// Modify transaction without updating MerkleRoot or Hash
+	if err := bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	// Modify transaction without updating MerkleRoot
 	bc.Blocks[1].Transactions[0].Amount = 999
 
 	valid, msg := bc.ValidateChain()
@@ -79,19 +79,21 @@ func TestValidateDetectsMerkleRootTampering(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
-
-	bc.AddBlock(
-		[]ledger.Transaction{tx},
-		DefaultDifficulty,
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
 	)
 
-	// Change stored Merkle root
-	bc.Blocks[1].MerkleRoot = "fake_merkle_root"
+	if err := bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	bc.Blocks[1].MerkleRoot =
+		"fake_merkle_root"
 
 	valid, msg := bc.ValidateChain()
 
@@ -113,18 +115,21 @@ func TestValidateInvalidPreviousHash(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
-
-	bc.AddBlock(
-		[]ledger.Transaction{tx},
-		DefaultDifficulty,
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
 	)
 
-	bc.Blocks[1].PreviousHash = "wrong_hash"
+	if err := bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	bc.Blocks[1].PreviousHash =
+		"wrong_hash"
 
 	bc.Blocks[1].Hash =
 		bc.Blocks[1].CalculateHash()
@@ -149,16 +154,18 @@ func TestValidateInvalidIndex(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
+	)
 
-	bc.AddBlock(
+	if err := bc.AddBlock(
 		[]ledger.Transaction{tx},
 		DefaultDifficulty,
-	)
+	); err != nil {
+		t.Fatal(err)
+	}
 
 	bc.Blocks[1].Index = 5
 
@@ -185,16 +192,18 @@ func TestValidateInvalidTimestamp(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
+	)
 
-	bc.AddBlock(
+	if err := bc.AddBlock(
 		[]ledger.Transaction{tx},
 		DefaultDifficulty,
-	)
+	); err != nil {
+		t.Fatal(err)
+	}
 
 	bc.Blocks[1].Timestamp =
 		bc.Blocks[0].Timestamp - 100
@@ -222,11 +231,11 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
+	)
 
 	difficulty := 3
 
@@ -237,8 +246,8 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 		difficulty,
 	)
 
-	// Do not mine
-	b.Hash = b.CalculateHash()
+	b.Hash =
+		b.CalculateHash()
 
 	if strings.HasPrefix(
 		b.Hash,
@@ -250,10 +259,11 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 		)
 	}
 
-	bc.Blocks = append(
-		bc.Blocks,
-		b,
-	)
+	bc.Blocks =
+		append(
+			bc.Blocks,
+			b,
+		)
 
 	valid, msg := bc.ValidateChain()
 
@@ -275,11 +285,11 @@ func TestValidateDetectsOverspendInChain(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	badTx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Mallory",
-		Amount:   999999,
-	}
+	badTx := createSignedTransaction(
+		"Alice",
+		"Mallory",
+		999999,
+	)
 
 	b := block.NewBlock(
 		1,
@@ -293,10 +303,11 @@ func TestValidateDetectsOverspendInChain(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	bc.Blocks = append(
-		bc.Blocks,
-		b,
-	)
+	bc.Blocks =
+		append(
+			bc.Blocks,
+			b,
+		)
 
 	valid, msg := bc.ValidateChain()
 

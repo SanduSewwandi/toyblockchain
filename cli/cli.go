@@ -9,6 +9,7 @@ import (
 
 	"toyblockchain/chain"
 	"toyblockchain/ledger"
+	"toyblockchain/wallet"
 )
 
 func isValidSender(sender string) bool {
@@ -67,6 +68,20 @@ func run(args []string) {
 		}
 	}
 
+	// Load wallet (named accounts and their key pairs). Created fresh
+	// with no accounts if this is the first run.
+	w, err := wallet.LoadWallet(wallet.DefaultWalletFile)
+
+	if err != nil {
+
+		fmt.Println(
+			"Error loading wallet:",
+			err,
+		)
+
+		return
+	}
+
 	// Build ledger
 	ld := blockchain.BuildLedger()
 
@@ -122,6 +137,20 @@ func run(args []string) {
 			return
 		}
 
+		// Look up (or create, on first use) the sender's key pair, and
+		// sign the transaction with it.
+		senderKeys, err := w.GetOrCreate(args[1])
+
+		if err != nil {
+
+			fmt.Println(
+				"Error accessing sender's key pair:",
+				err,
+			)
+
+			return
+		}
+
 		tx := ledger.Transaction{
 
 			Sender: args[1],
@@ -130,6 +159,8 @@ func run(args []string) {
 
 			Amount: amount,
 		}
+
+		ledger.SignTransaction(&tx, senderKeys)
 
 		tempLedger := ld.Clone()
 
@@ -328,17 +359,45 @@ func run(args []string) {
 			"Running blockchain demo...",
 		)
 
+		aliceKeys, err := w.GetOrCreate("Alice")
+
+		if err != nil {
+
+			fmt.Println(
+				"Error accessing Alice's key pair:",
+				err,
+			)
+
+			return
+		}
+
+		bobKeys, err := w.GetOrCreate("Bob")
+
+		if err != nil {
+
+			fmt.Println(
+				"Error accessing Bob's key pair:",
+				err,
+			)
+
+			return
+		}
+
 		tx1 := ledger.Transaction{
 			Sender:   "Alice",
 			Receiver: "Bob",
 			Amount:   20,
 		}
 
+		ledger.SignTransaction(&tx1, aliceKeys)
+
 		tx2 := ledger.Transaction{
 			Sender:   "Bob",
 			Receiver: "Charlie",
 			Amount:   10,
 		}
+
+		ledger.SignTransaction(&tx2, bobKeys)
 
 		if err := blockchain.AddBlock(
 			[]ledger.Transaction{tx1},

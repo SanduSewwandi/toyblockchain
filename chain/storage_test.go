@@ -15,11 +15,11 @@ func TestBlockchainSaveAndLoad(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	tx := ledger.Transaction{
-		Sender:   "Alice",
-		Receiver: "Bob",
-		Amount:   10,
-	}
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
+	)
 
 	err := bc.AddBlock(
 		[]ledger.Transaction{tx},
@@ -49,6 +49,16 @@ func TestBlockchainSaveAndLoad(t *testing.T) {
 		)
 	}
 
+	// Verify loaded chain is still valid.
+	valid, msg := loaded.ValidateChain()
+
+	if !valid {
+
+		t.Errorf(
+			"Loaded blockchain validation failed: %s",
+			msg,
+		)
+	}
 }
 
 func TestPendingTransactionSaveLoad(t *testing.T) {
@@ -57,13 +67,14 @@ func TestPendingTransactionSaveLoad(t *testing.T) {
 
 	defer os.Remove(file)
 
-	txs := []ledger.Transaction{
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		20,
+	)
 
-		{
-			Sender:   "Alice",
-			Receiver: "Bob",
-			Amount:   20,
-		},
+	txs := []ledger.Transaction{
+		tx,
 	}
 
 	err := SavePending(
@@ -88,4 +99,13 @@ func TestPendingTransactionSaveLoad(t *testing.T) {
 		)
 	}
 
+	// Verify signature survived persistence.
+	if !ledger.VerifyTransactionSignature(
+		loaded[0],
+	) {
+
+		t.Error(
+			"Loaded pending transaction has invalid signature",
+		)
+	}
 }
