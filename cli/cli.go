@@ -329,35 +329,47 @@ func run(args []string) {
 		)
 
 		tx1 := ledger.Transaction{
-
-			Sender: "Alice",
-
+			Sender:   "Alice",
 			Receiver: "Bob",
-
-			Amount: 20,
+			Amount:   20,
 		}
 
 		tx2 := ledger.Transaction{
-
-			Sender: "Bob",
-
+			Sender:   "Bob",
 			Receiver: "Charlie",
-
-			Amount: 10,
+			Amount:   10,
 		}
 
-		blockchain.AddBlock(
+		if err := blockchain.AddBlock(
 			[]ledger.Transaction{tx1},
 			chain.DefaultDifficulty,
-		)
+		); err != nil {
 
-		blockchain.AddBlock(
+			fmt.Println(
+				"Error adding first block:",
+				err,
+			)
+
+			return
+		}
+
+		if err := blockchain.AddBlock(
 			[]ledger.Transaction{tx2},
 			chain.DefaultDifficulty,
-		)
+		); err != nil {
 
-		// AddBlock no longer saves as a side effect — save explicitly.
-		if err := blockchain.SaveToFile(chain.DefaultBlockchainFile); err != nil {
+			fmt.Println(
+				"Error adding second block:",
+				err,
+			)
+
+			return
+		}
+
+		// Save blockchain explicitly.
+		if err := blockchain.SaveToFile(
+			chain.DefaultBlockchainFile,
+		); err != nil {
 
 			fmt.Println(
 				"Error saving blockchain:",

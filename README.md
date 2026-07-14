@@ -335,7 +335,7 @@ Additionally, worth being explicit about:
 
 # Technologies Used
 
-+- Go 1.22+
+- Go 1.22+
 - Standard library only: `crypto/sha256`, `encoding/json`, `encoding/hex`, `flag`, `fmt`, `os`, `strconv`, `strings`, `testing`, `time`
 
 No third-party libraries were used.
