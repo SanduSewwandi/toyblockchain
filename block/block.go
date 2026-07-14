@@ -13,6 +13,7 @@ type Block struct {
 	Index        int
 	Timestamp    int64
 	Transactions []ledger.Transaction
+	MerkleRoot   string
 	PreviousHash string
 	Nonce        int
 	Hash         string
@@ -24,14 +25,14 @@ func (b *Block) CalculateHash() string {
 	data := struct {
 		Index        int
 		Timestamp    int64
-		Transactions []ledger.Transaction
+		MerkleRoot   string
 		PreviousHash string
 		Nonce        int
 		Difficulty   int
 	}{
 		Index:        b.Index,
 		Timestamp:    b.Timestamp,
-		Transactions: b.Transactions,
+		MerkleRoot:   b.MerkleRoot,
 		PreviousHash: b.PreviousHash,
 		Nonce:        b.Nonce,
 		Difficulty:   b.Difficulty,
@@ -53,6 +54,7 @@ func NewBlockWithTimestamp(index int, txs []ledger.Transaction, previousHash str
 		Index:        index,
 		Timestamp:    timestamp,
 		Transactions: txs,
+		MerkleRoot:   MerkleRoot(txs),
 		PreviousHash: previousHash,
 		Nonce:        0,
 		Difficulty:   difficulty,

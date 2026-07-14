@@ -33,6 +33,7 @@ func NewBlockchain() *Blockchain {
 			Amount:   50,
 		},
 	}
+
 	genesis := block.NewBlockWithTimestamp(
 		0,
 		genesisTransactions,
@@ -61,7 +62,7 @@ func (bc *Blockchain) AddBlock(
 	difficulty int,
 ) error {
 
-	// Enforce configurable maximum block size (FR-9).
+	// Enforce maximum block size.
 	if len(transactions) > DefaultBlockSize {
 
 		return fmt.Errorf(
@@ -80,7 +81,7 @@ func (bc *Blockchain) AddBlock(
 		difficulty,
 	)
 
-	// Mine block using selected difficulty.
+	// Transactions -> Merkle Root -> Hash -> Proof of Work
 	MineBlock(
 		&newBlock,
 		difficulty,
@@ -106,6 +107,7 @@ func (bc *Blockchain) Print() {
 		fmt.Printf("Index         : %d\n", b.Index)
 		fmt.Printf("Timestamp     : %d\n", b.Timestamp)
 		fmt.Printf("Previous Hash : %s\n", b.PreviousHash)
+		fmt.Printf("Merkle Root   : %s\n", b.MerkleRoot)
 		fmt.Printf("Hash          : %s\n", b.Hash)
 		fmt.Printf("Nonce         : %d\n", b.Nonce)
 		fmt.Printf("Difficulty    : %d\n", b.Difficulty)

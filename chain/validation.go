@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"toyblockchain/block"
 	"toyblockchain/ledger"
 )
 
 // ValidateChain verifies the integrity of the entire blockchain.
 func (bc *Blockchain) ValidateChain() (bool, string) {
+
+	if len(bc.Blocks) == 0 {
+
+		return false, "Blockchain is empty"
+	}
 
 	ld := ledger.NewLedger()
 
@@ -16,7 +22,20 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 
 		current := bc.Blocks[i]
 
-		//  Verify stored hash matches recalculated hash.
+		// Verify Merkle root matches transactions.
+		expectedMerkleRoot := block.MerkleRoot(
+			current.Transactions,
+		)
+
+		if current.MerkleRoot != expectedMerkleRoot {
+
+			return false, fmt.Sprintf(
+				"Block %d: Merkle root mismatch (data tampered)",
+				i,
+			)
+		}
+
+		// Verify stored hash matches recalculated hash.
 		if current.CalculateHash() != current.Hash {
 
 			return false, fmt.Sprintf(
@@ -25,9 +44,9 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
+		// Genesis block validation
 		if i == 0 {
 
-			// Validate genesis block.
 			if current.Index != 0 {
 
 				return false,
@@ -53,7 +72,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			//  Verify sequential block indexes.
+			// Verify block index sequence.
 			if current.Index != previous.Index+1 {
 
 				return false, fmt.Sprintf(
@@ -62,7 +81,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			//  Verify timestamp ordering.
+			// Verify timestamp ordering.
 			if current.Timestamp < previous.Timestamp {
 
 				return false, fmt.Sprintf(
@@ -71,6 +90,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
+			// Verify difficulty value.
 			if current.Difficulty < MinDifficulty {
 
 				return false, fmt.Sprintf(
@@ -81,7 +101,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			//  Verify Proof-of-Work using the block's own difficulty.
+			// Verify Proof-of-Work.
 			target := strings.Repeat(
 				"0",
 				current.Difficulty,
@@ -99,6 +119,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
+		// Replay transactions to verify ledger consistency.
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

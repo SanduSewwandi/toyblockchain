@@ -76,8 +76,36 @@ func TestNewBlock(t *testing.T) {
 	}
 }
 
+// Test that NewBlock stores a Merkle root matching a fresh computation.
+func TestNewBlockStoresMerkleRoot(t *testing.T) {
+
+	txs := []ledger.Transaction{
+		{Sender: "Alice", Receiver: "Bob", Amount: 10},
+	}
+
+	b := NewBlock(1, txs, "prevhash", 4)
+
+	expected := MerkleRoot(txs)
+
+	if b.MerkleRoot != expected {
+		t.Errorf(
+			"expected stored MerkleRoot %s, got %s",
+			expected,
+			b.MerkleRoot,
+		)
+	}
+}
+
 // Test hash generation
 func TestCalculateHash(t *testing.T) {
+
+	txs := []ledger.Transaction{
+		{
+			Sender:   "Alice",
+			Receiver: "Bob",
+			Amount:   5,
+		},
+	}
 
 	block := Block{
 
@@ -85,14 +113,9 @@ func TestCalculateHash(t *testing.T) {
 
 		Timestamp: 1000,
 
-		Transactions: []ledger.Transaction{
+		Transactions: txs,
 
-			{
-				Sender:   "Alice",
-				Receiver: "Bob",
-				Amount:   5,
-			},
-		},
+		MerkleRoot: MerkleRoot(txs),
 
 		PreviousHash: "abc",
 
@@ -124,20 +147,23 @@ func TestCalculateHash(t *testing.T) {
 // Test changing block data changes hash
 func TestHashChangesWhenDataChanges(t *testing.T) {
 
+	txs := []ledger.Transaction{
+		{
+			Sender:   "Alice",
+			Receiver: "Bob",
+			Amount:   10,
+		},
+	}
+
 	block := Block{
 
 		Index: 1,
 
 		Timestamp: 1000,
 
-		Transactions: []ledger.Transaction{
+		Transactions: txs,
 
-			{
-				Sender:   "Alice",
-				Receiver: "Bob",
-				Amount:   10,
-			},
-		},
+		MerkleRoot: MerkleRoot(txs),
 
 		PreviousHash: "abc",
 
@@ -148,8 +174,8 @@ func TestHashChangesWhenDataChanges(t *testing.T) {
 
 	oldHash := block.CalculateHash()
 
-	// Modify transaction
 	block.Transactions[0].Amount = 20
+	block.MerkleRoot = MerkleRoot(block.Transactions)
 
 	newHash := block.CalculateHash()
 
@@ -164,13 +190,17 @@ func TestHashChangesWhenDataChanges(t *testing.T) {
 // Test that Hash field is not included
 func TestHashFieldNotIncluded(t *testing.T) {
 
+	txs := []ledger.Transaction{}
+
 	block := Block{
 
 		Index: 1,
 
 		Timestamp: 1000,
 
-		Transactions: []ledger.Transaction{},
+		Transactions: txs,
+
+		MerkleRoot: MerkleRoot(txs),
 
 		PreviousHash: "abc",
 
@@ -198,13 +228,17 @@ func TestHashFieldNotIncluded(t *testing.T) {
 // Test that changing difficulty changes the hash
 func TestHashChangesWhenDifficultyChanges(t *testing.T) {
 
+	txs := []ledger.Transaction{}
+
 	block := Block{
 
 		Index: 1,
 
 		Timestamp: 1000,
 
-		Transactions: []ledger.Transaction{},
+		Transactions: txs,
+
+		MerkleRoot: MerkleRoot(txs),
 
 		PreviousHash: "abc",
 

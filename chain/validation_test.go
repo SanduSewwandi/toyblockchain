@@ -37,10 +37,10 @@ func TestValidateValidChain(t *testing.T) {
 			message,
 		)
 	}
-
 }
 
-func TestValidateDetectsTampering(t *testing.T) {
+// Test transaction tampering detection
+func TestValidateDetectsTransactionTampering(t *testing.T) {
 
 	bc := NewBlockchain()
 
@@ -55,23 +55,60 @@ func TestValidateDetectsTampering(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	// Modify transaction data without recomputing hash — this is the
-	// "attacker edits data on disk" scenario, so leaving Hash stale is correct here.
+	// Modify transaction without updating MerkleRoot or Hash
 	bc.Blocks[1].Transactions[0].Amount = 999
 
-	valid, message := bc.ValidateChain()
+	valid, msg := bc.ValidateChain()
 
 	if valid {
-		t.Error("Blockchain should be invalid after tampering")
+		t.Error("Blockchain should be invalid after transaction tampering")
 	}
 
-	if !strings.Contains(message, "hash mismatch") {
-		t.Errorf("expected hash mismatch message, got: %s", message)
+	if !strings.Contains(msg, "Merkle root mismatch") &&
+		!strings.Contains(msg, "hash mismatch") {
+
+		t.Errorf(
+			"expected tampering detection, got: %s",
+			msg,
+		)
 	}
 }
 
-// Test invalid previous hash link — recompute Hash so the tamper is caught
-// by the previous-hash-link check specifically, not the earlier hash-integrity check.
+// Test Merkle root tampering
+func TestValidateDetectsMerkleRootTampering(t *testing.T) {
+
+	bc := NewBlockchain()
+
+	tx := ledger.Transaction{
+		Sender:   "Alice",
+		Receiver: "Bob",
+		Amount:   10,
+	}
+
+	bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	)
+
+	// Change stored Merkle root
+	bc.Blocks[1].MerkleRoot = "fake_merkle_root"
+
+	valid, msg := bc.ValidateChain()
+
+	if valid {
+		t.Error("Blockchain should fail after Merkle root tampering")
+	}
+
+	if !strings.Contains(msg, "Merkle root mismatch") {
+
+		t.Errorf(
+			"expected Merkle root mismatch, got: %s",
+			msg,
+		)
+	}
+}
+
+// Test invalid previous hash link
 func TestValidateInvalidPreviousHash(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -87,10 +124,10 @@ func TestValidateInvalidPreviousHash(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	// Break the chain link, then recompute the hash so hash-integrity passes
-	// and validation actually reaches the previous-hash-link check.
 	bc.Blocks[1].PreviousHash = "wrong_hash"
-	bc.Blocks[1].Hash = bc.Blocks[1].CalculateHash()
+
+	bc.Blocks[1].Hash =
+		bc.Blocks[1].CalculateHash()
 
 	valid, msg := bc.ValidateChain()
 
@@ -99,11 +136,15 @@ func TestValidateInvalidPreviousHash(t *testing.T) {
 	}
 
 	if !strings.Contains(msg, "invalid previous hash link") {
-		t.Errorf("expected previous-hash-link failure, got: %s", msg)
+
+		t.Errorf(
+			"expected previous hash failure, got: %s",
+			msg,
+		)
 	}
 }
 
-// Test invalid block index — same pattern: recompute hash after tampering.
+// Test invalid block index
 func TestValidateInvalidIndex(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -119,9 +160,10 @@ func TestValidateInvalidIndex(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	// Change block height, then recompute hash so we reach the index check.
 	bc.Blocks[1].Index = 5
-	bc.Blocks[1].Hash = bc.Blocks[1].CalculateHash()
+
+	bc.Blocks[1].Hash =
+		bc.Blocks[1].CalculateHash()
 
 	valid, msg := bc.ValidateChain()
 
@@ -130,11 +172,15 @@ func TestValidateInvalidIndex(t *testing.T) {
 	}
 
 	if !strings.Contains(msg, "invalid block index") {
-		t.Errorf("expected index-validation failure, got: %s", msg)
+
+		t.Errorf(
+			"expected index failure, got: %s",
+			msg,
+		)
 	}
 }
 
-// Test invalid timestamp order — same pattern: recompute hash after tampering.
+// Test invalid timestamp
 func TestValidateInvalidTimestamp(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -150,10 +196,11 @@ func TestValidateInvalidTimestamp(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	// Set the block's timestamp earlier than its predecessor, then recompute
-	// hash so we reach the timestamp check.
-	bc.Blocks[1].Timestamp = bc.Blocks[0].Timestamp - 100
-	bc.Blocks[1].Hash = bc.Blocks[1].CalculateHash()
+	bc.Blocks[1].Timestamp =
+		bc.Blocks[0].Timestamp - 100
+
+	bc.Blocks[1].Hash =
+		bc.Blocks[1].CalculateHash()
 
 	valid, msg := bc.ValidateChain()
 
@@ -162,17 +209,15 @@ func TestValidateInvalidTimestamp(t *testing.T) {
 	}
 
 	if !strings.Contains(msg, "invalid timestamp") {
-		t.Errorf("expected timestamp-validation failure, got: %s", msg)
+
+		t.Errorf(
+			"expected timestamp failure, got: %s",
+			msg,
+		)
 	}
 }
 
-// Test invalid proof of work — this one can't be fixed by just recomputing
-// the hash, since a hash honestly recomputed from real mined data will still
-// satisfy the difficulty it was mined at. Instead, build a block directly
-// (skipping MineBlock) so its nonce was never searched for, giving it a
-// hash that is internally consistent (passes hash-integrity) but almost
-// certainly doesn't have the required leading zeros — which is exactly what
-// "claims a difficulty it never mined at" looks like.
+// Test invalid proof of work
 func TestValidateInvalidProofOfWork(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -183,26 +228,32 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 		Amount:   10,
 	}
 
-	difficulty := 3 // must be >= MinDifficulty, or we'd hit the floor check instead
+	difficulty := 3
 
 	b := block.NewBlock(
-		bc.Blocks[0].Index+1,
+		1,
 		[]ledger.Transaction{tx},
 		bc.Blocks[0].Hash,
 		difficulty,
 	)
-	// Deliberately NOT calling MineBlock: Nonce stays at 0, so b.Hash
-	// (set by NewBlock) is internally consistent but essentially random
-	// with respect to the difficulty target.
+
+	// Do not mine
 	b.Hash = b.CalculateHash()
 
-	// Guard against the astronomically unlikely case that nonce 0 happens
-	// to satisfy difficulty 3 anyway (~1 in 4096).
-	if strings.HasPrefix(b.Hash, strings.Repeat("0", difficulty)) {
-		t.Skip("nonce 0 happened to satisfy the difficulty target by chance; rerun")
+	if strings.HasPrefix(
+		b.Hash,
+		strings.Repeat("0", difficulty),
+	) {
+
+		t.Skip(
+			"Nonce 0 unexpectedly satisfied difficulty",
+		)
 	}
 
-	bc.Blocks = append(bc.Blocks, b)
+	bc.Blocks = append(
+		bc.Blocks,
+		b,
+	)
 
 	valid, msg := bc.ValidateChain()
 
@@ -211,15 +262,19 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 	}
 
 	if !strings.Contains(msg, "invalid proof-of-work") {
-		t.Errorf("expected proof-of-work failure, got: %s", msg)
+
+		t.Errorf(
+			"expected proof-of-work failure, got: %s",
+			msg,
+		)
 	}
 }
 
+// Test overspending detection
 func TestValidateDetectsOverspendInChain(t *testing.T) {
 
 	bc := NewBlockchain()
 
-	// Alice only has 100 from genesis — this overspends.
 	badTx := ledger.Transaction{
 		Sender:   "Alice",
 		Receiver: "Mallory",
@@ -233,18 +288,27 @@ func TestValidateDetectsOverspendInChain(t *testing.T) {
 		DefaultDifficulty,
 	)
 
-	MineBlock(&b, DefaultDifficulty)
+	MineBlock(
+		&b,
+		DefaultDifficulty,
+	)
 
-	bc.Blocks = append(bc.Blocks, b)
+	bc.Blocks = append(
+		bc.Blocks,
+		b,
+	)
 
 	valid, msg := bc.ValidateChain()
 
 	if valid {
 
 		t.Error(
-			"chain with an overspending transaction should fail validation",
+			"chain with overspending transaction should fail",
 		)
 	}
 
-	t.Log("validation message:", msg)
+	t.Log(
+		"validation message:",
+		msg,
+	)
 }
