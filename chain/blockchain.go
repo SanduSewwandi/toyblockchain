@@ -81,10 +81,12 @@ func (bc *Blockchain) AddBlock(
 		difficulty,
 	)
 
-	// Transactions -> Merkle Root -> Hash -> Proof of Work
-	MineBlock(
+	// Transactions -> Merkle Root -> Hash -> Proof of Work (mined
+	// concurrently across all available CPU cores).
+	MineBlockConcurrent(
 		&newBlock,
 		difficulty,
+		DefaultMiningWorkers,
 	)
 
 	// Append mined block.

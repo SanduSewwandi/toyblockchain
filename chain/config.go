@@ -1,5 +1,7 @@
 package chain
 
+import "runtime"
+
 var (
 	// Default mining difficulty.
 	DefaultDifficulty = 4
@@ -12,6 +14,9 @@ var (
 
 	// Pending transaction persistence file.
 	DefaultPendingFile = "pending.json"
+
+	// Number of goroutines used for concurrent mining.
+	DefaultMiningWorkers = runtime.NumCPU()
 )
 
 const MinDifficulty = 3
