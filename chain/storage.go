@@ -56,6 +56,22 @@ func (bc *Blockchain) SaveToFile(filename string) error {
 	return nil
 }
 
+func LoadCandidateFromFile(filename string) (*Blockchain, error) {
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read candidate chain: %w", err)
+	}
+
+	var bc Blockchain
+
+	if err := json.Unmarshal(data, &bc); err != nil {
+		return nil, fmt.Errorf("failed to parse candidate chain: %w", err)
+	}
+
+	return &bc, nil
+}
+
 func LoadFromFile(filename string) (*Blockchain, error) {
 
 	// First run: create a new blockchain.

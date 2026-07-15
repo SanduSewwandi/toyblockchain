@@ -262,7 +262,7 @@ func run(args []string) {
 			}
 		}
 
-		nextDifficulty := chain.NextDifficultyFor(blockchain, chain.DefaultDifficulty)
+		nextDifficulty := chain.CalculateNextDifficulty(blockchain)
 
 		fmt.Println(
 			"Mining difficulty:",
@@ -449,6 +449,64 @@ func run(args []string) {
 			msg,
 		)
 
+	case "resolve":
+
+		if len(args) != 2 {
+
+			fmt.Println(
+				"Usage: go run main.go resolve <candidate_chain.json>",
+			)
+
+			return
+		}
+
+		candidate, err := chain.LoadCandidateFromFile(args[1])
+
+		if err != nil {
+
+			fmt.Println(
+				"Error loading candidate chain:",
+				err,
+			)
+
+			return
+		}
+
+		accepted, msg := blockchain.ResolveFork(candidate)
+
+		fmt.Println(
+			"========== FORK RESOLUTION ==========",
+		)
+
+		fmt.Println(
+			"Accepted:",
+			accepted,
+		)
+
+		fmt.Println(
+			"Message:",
+			msg,
+		)
+
+		if accepted {
+
+			if err := blockchain.SaveToFile(
+				chain.DefaultBlockchainFile,
+			); err != nil {
+
+				fmt.Println(
+					"Error saving blockchain:",
+					err,
+				)
+
+				return
+			}
+
+			fmt.Println(
+				"Chain replaced and saved.",
+			)
+		}
+
 	case "help":
 
 		printHelp()
@@ -513,6 +571,10 @@ func printHelp() {
 
 	fmt.Println(
 		" balance",
+	)
+
+	fmt.Println(
+		" resolve <file>  Adopt a competing chain from file if it wins the longest-valid-chain rule",
 	)
 
 	fmt.Println(
