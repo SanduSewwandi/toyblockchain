@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -31,8 +32,26 @@ func main() {
 		fmt.Fprintf(w, `{"height":%d}`, n.Height())
 	})
 
+	mux.HandleFunc("/head", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"height":%d,"hash":%q}`, n.Height(), n.HeadHash())
+	})
+
 	mux.HandleFunc("/peers", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"peers":%q}`, n.PeerList())
+	})
+
+	mux.HandleFunc("/pending", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"pending":%d}`, n.PendingCount())
+	})
+
+	mux.HandleFunc("/balance", func(w http.ResponseWriter, r *http.Request) {
+		addr := r.URL.Query().Get("address")
+		fmt.Fprintf(w, `{"address":%q,"balance":%d}`, addr, n.Balance(addr))
+	})
+
+	mux.HandleFunc("/chain", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(n.ChainSnapshot())
 	})
 
 	log.Printf("node listening on %s, peers=%v\n", *addr, peers)
