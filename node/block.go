@@ -18,7 +18,7 @@ func (n *Node) AddBlock(b block.Block) (AddBlockResult, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	// Ignore blocks that this node has already processed.
+	// Ignore blocks that this node has already accepted.
 	if n.seenBlocks[b.Hash] {
 		return AddBlockResult{
 			Accepted: false,
@@ -33,12 +33,35 @@ func (n *Node) AddBlock(b block.Block) (AddBlockResult, error) {
 		}, fmt.Errorf("invalid block: %w", err)
 	}
 
-	n.seenBlocks[b.Hash] = true
-
 	latest := n.Blockchain.GetLatestBlock()
 
 	if b.Index == latest.Index+1 &&
 		b.PreviousHash == latest.Hash {
+
+		// Enforce the difficulty this position in the chain actually
+		// expects. validateReceivedBlock only checks that the block's
+		// stated difficulty was met (self-consistency) and that it's
+		// not below the absolute floor — it does not check that the
+		// block used the difficulty retargeting mandates. Without this,
+		// a peer could keep mining at MinDifficulty forever, and since
+		// ResolveFork picks the winning chain by block count before
+		// falling back to cumulative work, a longer chain of cheap
+		// blocks could beat a legitimately-mined one.
+		expectedDifficulty := chain.NextDifficultyFor(
+			n.Blockchain,
+			chain.DefaultDifficulty,
+		)
+
+		if b.Difficulty != expectedDifficulty {
+			return AddBlockResult{
+					Accepted: false,
+					Reason:   "invalid difficulty",
+				}, fmt.Errorf(
+					"block difficulty %d does not match expected difficulty %d",
+					b.Difficulty,
+					expectedDifficulty,
+				)
+		}
 
 		if b.Timestamp < latest.Timestamp {
 			return AddBlockResult{
@@ -68,6 +91,11 @@ func (n *Node) AddBlock(b block.Block) (AddBlockResult, error) {
 			n.Blockchain.Blocks,
 			b,
 		)
+
+		// Only mark as seen once it's actually accepted onto the chain,
+		// so a block that fails to extend the tip remains re-processable
+		// for a later sync/reorg.
+		n.seenBlocks[b.Hash] = true
 
 		// Remove transactions that are now confirmed.
 		n.removeMinedTransactionsLocked(b.Transactions)
