@@ -41,6 +41,12 @@ func main() {
 		"disable this node's mining loop (still validates and gossips)",
 	)
 
+	peerHealthInterval := flag.Duration(
+		"peer-health-interval",
+		10*time.Second,
+		"how often this node checks peer health and exchanges peer lists",
+	)
+
 	flag.Parse()
 
 	// Parse peer addresses.
@@ -134,6 +140,12 @@ func main() {
 			server.BroadcastMinedBlock(b)
 		}, stopMining)
 	}
+
+	// FR-10: peer health. Runs regardless of whether mining is
+	// enabled — exchanges peer lists with known peers (so a network
+	// can form from a single seed address) and drops any peer that
+	// fails repeated health checks.
+	go n.StartPeerHealthLoop(*peerHealthInterval, stopMining)
 
 	if err := <-serverErrCh; err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
