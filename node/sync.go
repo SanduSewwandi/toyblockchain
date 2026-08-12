@@ -11,12 +11,10 @@ import (
 	"toyblockchain/ledger"
 )
 
-// syncHTTPClient is shared by synchronization requests.
 var syncHTTPClient = &http.Client{
 	Timeout: 5 * time.Second,
 }
 
-// SyncResult describes the result of synchronizing with a peer.
 type SyncResult struct {
 	Adopted      bool
 	LocalHeight  int
@@ -92,7 +90,6 @@ func (n *Node) SyncFromPeer(peer string) (SyncResult, error) {
 		return SyncResult{}, err
 	}
 
-	// Validate the complete chain before considering it for adoption.
 	if err := ValidateCandidateChain(remoteBlocks); err != nil {
 		return SyncResult{
 			Adopted: false,
@@ -106,8 +103,6 @@ func (n *Node) SyncFromPeer(peer string) (SyncResult, error) {
 	localHeight := n.Blockchain.GetLatestBlock().Index
 	remoteHeight := remoteBlocks[len(remoteBlocks)-1].Index
 
-	// If both chains contain exactly the same blocks, there is nothing
-	// to synchronize.
 	if chainsEqual(n.Blockchain.Blocks, remoteBlocks) {
 		return SyncResult{
 			Adopted:      false,
@@ -117,12 +112,16 @@ func (n *Node) SyncFromPeer(peer string) (SyncResult, error) {
 		}, nil
 	}
 
+	// Snapshot the current chain before ResolveFork potentially
+	// overwrites n.Blockchain.Blocks in place, so we can recover
+	// transactions from any blocks that end up orphaned by the swap.
+	oldBlocks := make([]block.Block, len(n.Blockchain.Blocks))
+	copy(oldBlocks, n.Blockchain.Blocks)
+
 	candidate := &chain.Blockchain{
 		Blocks: remoteBlocks,
 	}
 
-	// ResolveFork performs the fork-resolution decision and, when the
-	// candidate wins, replaces n.Blockchain.Blocks.
 	adopted, reason := n.Blockchain.ResolveFork(candidate)
 
 	if !adopted {
@@ -132,6 +131,29 @@ func (n *Node) SyncFromPeer(peer string) (SyncResult, error) {
 			RemoteHeight: remoteHeight,
 			Reason:       reason,
 		}, nil
+	}
+
+	// Recover transactions from orphaned blocks. reconcilePendingLocked
+	// only re-validates what's already in n.Pending — but a mined
+	// block's transactions were already stripped out of Pending when
+	// that block was accepted (see removeMinedTransactionsLocked). If
+	// that block is now orphaned by the chain swap above, its
+	// transactions must be re-queued here before reconciliation runs,
+	// or they're silently lost rather than returned to the pool per
+	// FR-6.
+	newHashes := make(map[string]bool, len(n.Blockchain.Blocks))
+
+	for _, b := range n.Blockchain.Blocks {
+		newHashes[b.Hash] = true
+	}
+
+	for _, b := range oldBlocks {
+
+		if newHashes[b.Hash] {
+			continue
+		}
+
+		n.Pending = append(n.Pending, b.Transactions...)
 	}
 
 	n.reconcilePendingLocked()
@@ -154,7 +176,6 @@ func (n *Node) SyncFromPeers() []SyncResult {
 	results := make([]SyncResult, 0, len(peers))
 
 	for _, peer := range peers {
-		// Never synchronize with ourselves.
 		if peer == n.Address {
 			continue
 		}
@@ -174,7 +195,6 @@ func (n *Node) SyncFromPeers() []SyncResult {
 func (n *Node) reconcilePendingLocked() {
 	confirmed := make(map[string]bool)
 
-	// Record all transactions already confirmed by the new chain.
 	for _, b := range n.Blockchain.Blocks {
 		for _, tx := range b.Transactions {
 			if tx.Signature != "" {
@@ -183,7 +203,6 @@ func (n *Node) reconcilePendingLocked() {
 		}
 	}
 
-	// Build the ledger represented by the newly adopted chain.
 	ld := n.Blockchain.BuildLedger()
 
 	remaining := make(
@@ -194,7 +213,6 @@ func (n *Node) reconcilePendingLocked() {
 
 	for _, tx := range n.Pending {
 
-		// Transaction is already confirmed by the adopted chain.
 		if tx.Signature != "" && confirmed[tx.Signature] {
 			continue
 		}
@@ -211,7 +229,6 @@ func (n *Node) reconcilePendingLocked() {
 
 	n.seenTx = make(map[string]bool)
 
-	// Confirmed transactions are considered seen.
 	for _, b := range n.Blockchain.Blocks {
 		for _, tx := range b.Transactions {
 			if tx.Signature != "" {
@@ -220,7 +237,6 @@ func (n *Node) reconcilePendingLocked() {
 		}
 	}
 
-	// Surviving pending transactions are also considered seen.
 	for _, tx := range n.Pending {
 		if tx.Signature != "" {
 			n.seenTx[tx.Signature] = true

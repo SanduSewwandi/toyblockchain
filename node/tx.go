@@ -10,12 +10,10 @@ func (n *Node) AddTransaction(tx ledger.Transaction) (accepted bool, err error) 
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-
 	if tx.Sender == "" {
 		return false, fmt.Errorf("transaction rejected: sender is required")
 	}
 
-	
 	if tx.Signature == "" {
 		return false, fmt.Errorf("transaction rejected: signature is required")
 	}

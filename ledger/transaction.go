@@ -12,11 +12,11 @@ type Transaction struct {
 }
 
 func (tx Transaction) SigningBytes() []byte {
-
 	return []byte(fmt.Sprintf(
-		"%s:%s:%d",
+		"%s:%s:%d:%s",
 		tx.Sender,
 		tx.Receiver,
 		tx.Amount,
+		tx.PublicKey,
 	))
 }
