@@ -8,7 +8,6 @@ import (
 	"toyblockchain/ledger"
 )
 
-
 type Node struct {
 	mu sync.RWMutex
 
@@ -16,8 +15,9 @@ type Node struct {
 	Pending    []ledger.Transaction
 	Peers      map[string]bool // peer address -> known
 
-	// Address is this node's own listen address (e.g. "localhost:8001"),
-	// used so a node can identify and skip itself when gossiping.
+	seenTx     map[string]bool
+	seenBlocks map[string]bool
+
 	Address string
 }
 
@@ -36,6 +36,8 @@ func NewNode(address string, initialPeers []string) *Node {
 		Pending:    []ledger.Transaction{},
 		Peers:      peers,
 		Address:    address,
+		seenTx:     make(map[string]bool),
+		seenBlocks: make(map[string]bool),
 	}
 }
 

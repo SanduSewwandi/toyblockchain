@@ -1,59 +1,146 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
+	"toyblockchain/block"
 	"toyblockchain/node"
 )
 
 func main() {
+	addr := flag.String(
+		"addr",
+		":8001",
+		"address for this node to listen on",
+	)
 
-	addr := flag.String("addr", ":8001", "address for this node to listen on")
-	peersFlag := flag.String("peers", "", "comma-separated list of peer addresses")
+	peersFlag := flag.String(
+		"peers",
+		"",
+		"comma-separated list of peer addresses",
+	)
+
+	mineInterval := flag.Duration(
+		"mine-interval",
+		5*time.Second,
+		"how often this node attempts to mine pending transactions",
+	)
+
+	noMine := flag.Bool(
+		"no-mine",
+		false,
+		"disable this node's mining loop (still validates and gossips)",
+	)
 
 	flag.Parse()
 
+	// Parse peer addresses.
 	var peers []string
 
 	if *peersFlag != "" {
-		peers = strings.Split(*peersFlag, ",")
+		for _, peer := range strings.Split(*peersFlag, ",") {
+			peer = strings.TrimSpace(peer)
+
+			if peer != "" {
+				peers = append(peers, peer)
+			}
+		}
 	}
 
+	// Create the blockchain node.
 	n := node.NewNode(*addr, peers)
 
-	mux := http.NewServeMux()
+	// Create the HTTP server using the node package's
+	// centralized route and handler implementation.
+	server := node.NewServer(n, *addr)
 
-	mux.HandleFunc("/height", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"height":%d}`, n.Height())
-	})
+	// Handle Ctrl+C / process termination so the HTTP server
+	// and mining loop can shut down gracefully.
+	stop := make(chan os.Signal, 1)
 
-	mux.HandleFunc("/head", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"height":%d,"hash":%q}`, n.Height(), n.HeadHash())
-	})
+	signal.Notify(
+		stop,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
 
-	mux.HandleFunc("/peers", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"peers":%q}`, n.PeerList())
-	})
+	stopMining := make(chan struct{})
 
-	mux.HandleFunc("/pending", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"pending":%d}`, n.PendingCount())
-	})
+	go func() {
+		<-stop
 
-	mux.HandleFunc("/balance", func(w http.ResponseWriter, r *http.Request) {
-		addr := r.URL.Query().Get("address")
-		fmt.Fprintf(w, `{"address":%q,"balance":%d}`, addr, n.Balance(addr))
-	})
+		log.Println("shutdown signal received")
 
-	mux.HandleFunc("/chain", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(n.ChainSnapshot())
-	})
+		close(stopMining)
 
-	log.Printf("node listening on %s, peers=%v\n", *addr, peers)
-	log.Fatal(http.ListenAndServe(*addr, mux))
+		ctx, cancel := context.WithTimeout(
+			context.Background(),
+			5*time.Second,
+		)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("server shutdown error: %v", err)
+		}
+	}()
+
+	// Start the HTTP server in the background so it doesn't block the
+	// initial sync attempt below.
+	serverErrCh := make(chan error, 1)
+
+	go func() {
+		if err := server.Start(); err != nil {
+			serverErrCh <- err
+		}
+	}()
+
+	log.Printf(
+		"node listening on %s, peers=%v",
+		*addr,
+		peers,
+	)
+
+	// Give the listener a brief moment to come up before syncing, so a
+	// cluster of nodes started together doesn't all fail their first
+	// sync attempt against a peer that isn't ready yet. Peers still
+	// down are simply skipped — SyncFromPeers logs per-peer results
+	// without stopping the node.
+	if len(peers) > 0 {
+		time.Sleep(200 * time.Millisecond)
+
+		for _, result := range n.SyncFromPeers() {
+			if result.Adopted {
+				log.Printf(
+					"synced chain from peer: %d -> %d blocks (%s)",
+					result.LocalHeight+1,
+					result.RemoteHeight+1,
+					result.Reason,
+				)
+			}
+		}
+	}
+
+	if !*noMine {
+		go n.StartMiningLoop(*mineInterval, func(b block.Block) {
+			server.BroadcastMinedBlock(b)
+		}, stopMining)
+	}
+
+	if err := <-serverErrCh; err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			log.Println("node stopped")
+			return
+		}
+
+		log.Fatalf("server error: %v", err)
+	}
 }
