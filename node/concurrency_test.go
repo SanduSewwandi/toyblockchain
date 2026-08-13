@@ -10,12 +10,7 @@ import (
 	"toyblockchain/ledger"
 )
 
-// FR-7 acceptance criterion: a node that is mining while gossiping
-// with peers must show no data race under `go test -race`. This test
-// doesn't assert much about outcomes — its job is to give the race
-// detector maximum opportunity to catch unsynchronized access to
-// Node's chain, pending pool, and peer set while request handlers,
-// the miner, and gossip are all active at once.
+
 func TestConcurrentMiningGossipAndReadsAreRaceFree(t *testing.T) {
 
 	if testing.Short() {

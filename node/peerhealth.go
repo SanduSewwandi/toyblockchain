@@ -7,21 +7,7 @@ import (
 	"time"
 )
 
-// FR-10: peer health.
-//
-// Two responsibilities live here, kept separate from gossip.go and
-// sync.go so neither needs to change:
-//
-//  1. Peer exchange — ask a known peer for ITS peer list, so a small
-//     network can bootstrap from a single seed address rather than
-//     every node needing a hand-written full peer list.
-//  2. Unreachable-peer dropping — track consecutive failures per
-//     peer, and drop any peer that stays unreachable past a
-//     threshold, so a dead node doesn't get gossiped/synced against
-//     forever.
 
-// maxPeerFailures is how many consecutive failed health checks a
-// peer tolerates before being dropped from the peer set.
 const maxPeerFailures = 3
 
 var peerHealthHTTPClient = &http.Client{
@@ -77,9 +63,6 @@ func (n *Node) ExchangePeersWith(peer string) error {
 	return nil
 }
 
-// checkPeerHealthLocked pings a single peer's /health endpoint,
-// returning whether it responded successfully. Must be called
-// WITHOUT n.mu held, since it does network I/O.
 func checkPeerHealth(peer string) bool {
 
 	resp, err := peerHealthHTTPClient.Get("http://" + peer + "/health")
@@ -91,13 +74,7 @@ func checkPeerHealth(peer string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-// RunPeerHealthCheck runs one pass over all known peers: pings each
-// one, exchanges peer lists with the ones that respond, and drops
-// any peer that has failed maxPeerFailures times in a row.
-//
-// Failure counts are kept in-memory only within this call (via the
-// returned/updated failures map), since Node doesn't otherwise need
-// to expose per-peer failure counts outside this loop.
+
 func (n *Node) RunPeerHealthCheck(failures map[string]int) {
 
 	peers := n.PeerList()

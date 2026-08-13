@@ -139,11 +139,7 @@ func TestSyncFromPeerCatchesUpNewNode(t *testing.T) {
 	}
 }
 
-// FR-6 acceptance criterion, and the research report's required fork
-// experiment: two nodes each mine a different block at the same
-// height, then reconnect. Both must converge on the same (longer)
-// chain, and the orphaned block's still-valid transaction must
-// return to the pending pool.
+
 
 func TestForkConvergenceAndOrphanTransactionRecovery(t *testing.T) {
 
@@ -203,10 +199,7 @@ func TestForkConvergenceAndOrphanTransactionRecovery(t *testing.T) {
 		t.Fatal("expected both nodes to converge on the same head hash")
 	}
 
-	// txA was only in the now-orphaned block A mined. Alice's balance
-	// on B's winning chain is untouched (B's blocks carry no
-	// transactions), so txA is still valid and must return to A's
-	// pending pool rather than being silently dropped.
+	
 	if nodeA.PendingCount() != 1 {
 		t.Fatalf("expected the orphaned transaction to return to the pending pool, got %d pending", nodeA.PendingCount())
 	}

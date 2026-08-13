@@ -11,11 +11,7 @@ import (
 	"toyblockchain/ledger"
 )
 
-// startCluster spins up n nodes, each with a real httptest HTTP server,
-// wired so every node knows every other node's actual listen address
-// (the way cmd/node's -peers flag would, but resolved automatically
-// since httptest assigns ports dynamically). Servers are torn down
-// automatically at the end of the test.
+
 func startCluster(t *testing.T, n int) ([]*Node, []*Server, []*httptest.Server) {
 	t.Helper()
 

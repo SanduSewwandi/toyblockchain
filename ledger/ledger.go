@@ -40,10 +40,7 @@ func (l *Ledger) Debit(user string, amount int64) error {
 	return nil
 }
 
-// ApplyTransaction validates and applies a transaction. For non-coinbase
-// transactions, it verifies the signature is self-consistent, and that the
-// signing key matches the key already registered for this sender (or
-// registers it, if this is the first time the sender has transacted).
+
 func (l *Ledger) ApplyTransaction(tx Transaction) error {
 
 	if tx.Amount <= 0 {
@@ -89,9 +86,6 @@ func (l *Ledger) ApplyBlockTransactions(txs []Transaction) error {
 	return nil
 }
 
-// Clone creates an independent copy of the ledger, including registered
-// keys, so pending-pool validation against a temp ledger enforces the
-// same identity binding as the real chain.
 func (l *Ledger) Clone() *Ledger {
 
 	newLedger := NewLedger()

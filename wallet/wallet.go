@@ -9,13 +9,7 @@ import (
 	"toyblockchain/crypto"
 )
 
-// DefaultWalletFile is where named account key pairs are persisted.
-//
-// SECURITY NOTE: this stores private keys in plaintext JSON on disk. That
-// is acceptable for a toy/educational project but is not how a production
-// system would manage keys — a real wallet would use an OS keychain,
-// hardware security module, or at minimum encrypt the file at rest. This
-// file must never be committed to version control (see .gitignore).
+
 const DefaultWalletFile = "wallet.json"
 
 // storedKeyPair is the JSON-serializable form of a crypto.KeyPair.

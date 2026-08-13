@@ -56,10 +56,7 @@ func TestAddBlockRemovesMinedTransactionFromPending(t *testing.T) {
 	}
 }
 
-// Regression test for the seenBlocks-marked-too-early bug: a block
-// that fails to extend the tip must NOT be marked seen, so a later
-// sync/reorg attempt can still process it (rather than silently
-// dropping it as a duplicate).
+
 
 func TestAddBlockDoesNotMarkNonExtendingBlockAsSeen(t *testing.T) {
 
@@ -133,10 +130,6 @@ func TestAddBlockDeduplicatesAcceptedBlock(t *testing.T) {
 	}
 }
 
-// Regression test for the missing difficulty-retargeting check: a
-// block that satisfies its own (too-low) stated difficulty must
-// still be rejected if it doesn't match what the chain actually
-// expects at this position.
 
 func TestAddBlockRejectsBlockBelowExpectedDifficulty(t *testing.T) {
 

@@ -4,15 +4,18 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"toyblockchain/block"
+	"toyblockchain/chain"
 	"toyblockchain/node"
 )
 
@@ -47,6 +50,25 @@ func main() {
 		"how often this node checks peer health and exchanges peer lists",
 	)
 
+	
+	dataFlag := flag.String(
+		"data",
+		"",
+		"blockchain persistence file (default: node_data/chain_<addr>.json)",
+	)
+
+	keyFlag := flag.String(
+		"keyfile",
+		"",
+		"node identity key file (default: node_data/identity_<addr>.json)",
+	)
+
+	persistInterval := flag.Duration(
+		"persist-interval",
+		10*time.Second,
+		"how often this node saves its chain to disk",
+	)
+
 	flag.Parse()
 
 	// Parse peer addresses.
@@ -62,15 +84,57 @@ func main() {
 		}
 	}
 
-	// Create the blockchain node.
+	dataFile := *dataFlag
+	if dataFile == "" {
+		dataFile = filepath.Join("node_data", fmt.Sprintf("chain_%s.json", sanitizeAddr(*addr)))
+	}
+
+	keyFile := *keyFlag
+	if keyFile == "" {
+		keyFile = filepath.Join("node_data", fmt.Sprintf("identity_%s.json", sanitizeAddr(*addr)))
+	}
+
+	if dir := filepath.Dir(dataFile); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			log.Fatalf("failed to create data directory: %v", err)
+		}
+	}
+
+	// FR-11: load (or create, on first run) this node's identity key
+	// pair, so it keeps the same identity across restarts.
+	identity, err := node.LoadOrCreateIdentity(keyFile)
+	if err != nil {
+		log.Fatalf("failed to load node identity: %v", err)
+	}
+
+	log.Printf(
+		"node identity: %s (key file: %s)",
+		identity.PublicKeyHex(),
+		keyFile,
+	)
+
+	
+	bc, err := chain.LoadFromFile(dataFile)
+	if err != nil {
+		log.Fatalf("failed to load blockchain: %v", err)
+	}
+
+	log.Printf(
+		"loaded chain: %d block(s) from %s",
+		len(bc.Blocks),
+		dataFile,
+	)
+
+	// Create the blockchain node, then swap in the loaded chain
+	// before anything else touches it.
 	n := node.NewNode(*addr, peers)
+	n.Blockchain = bc
 
 	// Create the HTTP server using the node package's
 	// centralized route and handler implementation.
 	server := node.NewServer(n, *addr)
 
-	// Handle Ctrl+C / process termination so the HTTP server
-	// and mining loop can shut down gracefully.
+	
 	stop := make(chan os.Signal, 1)
 
 	signal.Notify(
@@ -87,6 +151,12 @@ func main() {
 		log.Println("shutdown signal received")
 
 		close(stopMining)
+
+		if err := n.SaveChainTo(dataFile); err != nil {
+			log.Printf("failed to save chain on shutdown: %v", err)
+		} else {
+			log.Printf("chain saved to %s before shutdown", dataFile)
+		}
 
 		ctx, cancel := context.WithTimeout(
 			context.Background(),
@@ -115,11 +185,6 @@ func main() {
 		peers,
 	)
 
-	// Give the listener a brief moment to come up before syncing, so a
-	// cluster of nodes started together doesn't all fail their first
-	// sync attempt against a peer that isn't ready yet. Peers still
-	// down are simply skipped — SyncFromPeers logs per-peer results
-	// without stopping the node.
 	if len(peers) > 0 {
 		time.Sleep(200 * time.Millisecond)
 
@@ -141,11 +206,27 @@ func main() {
 		}, stopMining)
 	}
 
-	// FR-10: peer health. Runs regardless of whether mining is
-	// enabled — exchanges peer lists with known peers (so a network
-	// can form from a single seed address) and drops any peer that
-	// fails repeated health checks.
+	
 	go n.StartPeerHealthLoop(*peerHealthInterval, stopMining)
+
+	
+	go func() {
+		ticker := time.NewTicker(*persistInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+
+			case <-stopMining:
+				return
+
+			case <-ticker.C:
+				if err := n.SaveChainTo(dataFile); err != nil {
+					log.Printf("periodic chain save failed: %v", err)
+				}
+			}
+		}
+	}()
 
 	if err := <-serverErrCh; err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
@@ -155,4 +236,10 @@ func main() {
 
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+
+func sanitizeAddr(addr string) string {
+	replacer := strings.NewReplacer(":", "_", "/", "_")
+	return replacer.Replace(addr)
 }

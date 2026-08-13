@@ -103,10 +103,7 @@ func TestSenderAddressDerivedFromPublicKeyInAcceptedTransaction(t *testing.T) {
 	}
 }
 
-// Network-boundary hardening: an empty Sender bypasses signature
-// verification inside ledger.ApplyTransaction (that's how genesis
-// mints funds). AddTransaction must reject it so a client can't mint
-// funds over the network.
+
 
 func TestAddTransactionRejectsEmptySender(t *testing.T) {
 

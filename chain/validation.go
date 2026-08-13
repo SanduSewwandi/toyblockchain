@@ -112,10 +112,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
-		// Verify transactions. Signature validity and identity binding
-		// (matching each sender to their registered public key) are
-		// both checked inside ApplyTransaction, so a single call here
-		// covers everything: signature, identity, and balance.
+		
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

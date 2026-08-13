@@ -31,11 +31,7 @@ func newSignedTx(t *testing.T, sender, receiver string, amount int64) ledger.Tra
 	return tx
 }
 
-// mineNextBlock mines a block that correctly extends n's current tip,
-// using the difficulty the node itself would expect next. Tests use
-// this so that AddBlock's difficulty and PoW checks pass by default;
-// individual tests then tamper with the result to exercise rejection
-// paths.
+
 func mineNextBlock(t *testing.T, n *Node, txs []ledger.Transaction) block.Block {
 	t.Helper()
 

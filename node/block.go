@@ -38,15 +38,7 @@ func (n *Node) AddBlock(b block.Block) (AddBlockResult, error) {
 	if b.Index == latest.Index+1 &&
 		b.PreviousHash == latest.Hash {
 
-		// Enforce the difficulty this position in the chain actually
-		// expects. validateReceivedBlock only checks that the block's
-		// stated difficulty was met (self-consistency) and that it's
-		// not below the absolute floor — it does not check that the
-		// block used the difficulty retargeting mandates. Without this,
-		// a peer could keep mining at MinDifficulty forever, and since
-		// ResolveFork picks the winning chain by block count before
-		// falling back to cumulative work, a longer chain of cheap
-		// blocks could beat a legitimately-mined one.
+		
 		expectedDifficulty := chain.NextDifficultyFor(
 			n.Blockchain,
 			chain.DefaultDifficulty,
