@@ -300,7 +300,10 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 	}
 }
 
-// Test overspending detection
+// Test overspending detection. AddBlock now validates transactions
+// against replayed ledger state before mining, so an overspend must be
+// rejected at AddBlock time — it should never make it into the chain
+// for ValidateChain to catch after the fact.
 func TestValidateDetectsOverspendInChain(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -311,17 +314,30 @@ func TestValidateDetectsOverspendInChain(t *testing.T) {
 		999999,
 	)
 
-	if err := bc.AddBlock(
+	err := bc.AddBlock(
 		[]ledger.Transaction{badTx},
 		DefaultDifficulty,
-	); err == nil {
+	)
 
-		valid, msg := bc.ValidateChain()
+	if err == nil {
+		t.Fatal("expected AddBlock to reject an overspending transaction")
+	}
 
-		if valid {
-			t.Error("chain with overspending transaction should fail")
-		}
+	if len(bc.Blocks) != 1 {
+		t.Fatalf(
+			"expected chain to remain at genesis only after a rejected block, got %d blocks",
+			len(bc.Blocks),
+		)
+	}
 
-		t.Log("validation message:", msg)
+	// The chain should still be perfectly valid, since nothing bad
+	// was ever appended.
+	valid, msg := bc.ValidateChain()
+
+	if !valid {
+		t.Errorf(
+			"expected chain to remain valid after rejected overspend, got invalid: %s",
+			msg,
+		)
 	}
 }

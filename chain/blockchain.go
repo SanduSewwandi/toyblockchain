@@ -71,6 +71,22 @@ func (bc *Blockchain) AddBlock(
 		)
 	}
 
+	// Validate transactions against replayed ledger state before mining,
+	// so an overspend or invalid signature can never be mined into a
+	// block regardless of which caller invoked AddBlock.
+	ld := bc.BuildLedger()
+
+	for _, tx := range transactions {
+
+		if err := ld.ApplyTransaction(tx); err != nil {
+
+			return fmt.Errorf(
+				"invalid transaction in block: %w",
+				err,
+			)
+		}
+	}
+
 	nextDifficulty := NextDifficultyFor(bc, difficulty)
 
 	latest := bc.GetLatestBlock()
