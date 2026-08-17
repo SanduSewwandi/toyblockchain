@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -24,9 +25,13 @@ type peersResponse struct {
 // itself and anything already known).
 func (n *Node) ExchangePeersWith(peer string) error {
 
-	url := "http://" + peer + "/peers"
+	requestURL := "http://" + peer + "/peers"
 
-	resp, err := peerHealthHTTPClient.Get(url)
+	if n.Address != "" {
+		requestURL += "?self=" + url.QueryEscape(n.Address)
+	}
+
+	resp, err := peerHealthHTTPClient.Get(requestURL)
 	if err != nil {
 		return err
 	}

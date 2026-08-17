@@ -1,6 +1,7 @@
 package node
 
 import (
+	"log"
 	"sync"
 
 	"toyblockchain/block"
@@ -72,6 +73,21 @@ func (n *Node) PeerList() []string {
 	}
 
 	return list
+}
+
+func (n *Node) AddPeer(addr string) {
+
+	if addr == "" || addr == n.Address {
+		return
+	}
+
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.Peers[addr] {
+		n.Peers[addr] = true
+		log.Printf("registered new peer %s (self-announced)", addr)
+	}
 }
 
 // PendingCount returns the number of transactions waiting to be mined.

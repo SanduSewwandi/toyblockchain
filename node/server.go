@@ -125,10 +125,6 @@ func (s *Server) handleChain(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, blocks)
 }
 
-// Block-by-index endpoint (FR-5): serves a single block, e.g.
-// GET /blocks/3. This is the per-block fetch used by incremental sync,
-// distinct from the bulk chain dump above and from POST /blocks (block
-// gossip), which are handled separately.
 func (s *Server) handleBlockByIndex(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -156,11 +152,14 @@ func (s *Server) handleBlockByIndex(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, b)
 }
 
-// Peers endpoint
 func (s *Server) handlePeers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
+	}
+
+	if self := r.URL.Query().Get("self"); self != "" {
+		s.Node.AddPeer(self)
 	}
 
 	writeJSON(w, http.StatusOK, map[string][]string{
