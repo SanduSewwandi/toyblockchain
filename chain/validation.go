@@ -11,6 +11,10 @@ import (
 // ValidateChain verifies the integrity of the entire blockchain.
 func (bc *Blockchain) ValidateChain() (bool, string) {
 
+	if bc == nil {
+		return false, "Blockchain is nil"
+	}
+
 	if len(bc.Blocks) == 0 {
 		return false, "Blockchain is empty"
 	}
@@ -21,7 +25,22 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 
 		current := bc.Blocks[i]
 
-		// Verify Merkle root matches transactions.
+		
+		// Basic difficulty validation
+		
+
+		if current.Difficulty < MinDifficulty {
+
+			return false, fmt.Sprintf(
+				"Block %d: difficulty below minimum",
+				i,
+			)
+		}
+
+		
+		// Verify Merkle root
+		
+
 		expectedMerkleRoot := block.MerkleRoot(
 			current.Transactions,
 		)
@@ -34,7 +53,9 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		// Verify stored hash matches recalculated hash.
+		
+		// Verify stored hash
+		
 		if current.CalculateHash() != current.Hash {
 
 			return false, fmt.Sprintf(
@@ -43,22 +64,35 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
+		
 		// Genesis block validation
+		
 		if i == 0 {
 
+			// Genesis must always have index 0.
 			if current.Index != 0 {
-				return false, "Genesis block has invalid index"
+
+				return false,
+					"Genesis block has invalid index"
 			}
 
+			// Genesis must always point to the fixed zero hash.
 			if current.PreviousHash != GenesisPreviousHash {
-				return false, "Genesis block has invalid previous hash"
+
+				return false,
+					"Genesis block has invalid previous hash"
 			}
+
+			
 
 		} else {
 
 			previous := bc.Blocks[i-1]
 
-			// Previous hash connection check
+			
+			// Previous hash connection
+			
+
 			if current.PreviousHash != previous.Hash {
 
 				return false, fmt.Sprintf(
@@ -67,7 +101,9 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Block index check
+			
+			// Block index
+			
 			if current.Index != previous.Index+1 {
 
 				return false, fmt.Sprintf(
@@ -76,7 +112,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Timestamp check
+			
+			// Timestamp
 			if current.Timestamp < previous.Timestamp {
 
 				return false, fmt.Sprintf(
@@ -85,16 +122,32 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			// Difficulty check
-			if current.Difficulty < MinDifficulty {
+			
+			// Difficulty validation
+
+			history := &Blockchain{
+				Blocks: bc.Blocks[:i],
+			}
+
+			expectedDifficulty := NextDifficultyFor(
+				history,
+				DefaultDifficulty,
+			)
+
+			if current.Difficulty != expectedDifficulty {
 
 				return false, fmt.Sprintf(
-					"Block %d: difficulty below minimum",
+					"Block %d: invalid difficulty: expected %d, got %d",
 					i,
+					expectedDifficulty,
+					current.Difficulty,
 				)
 			}
 
-			// Proof of Work check
+			
+			// Proof of Work
+			
+
 			target := strings.Repeat(
 				"0",
 				current.Difficulty,
@@ -112,6 +165,9 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
+		
+		// Ledger validation
+		
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

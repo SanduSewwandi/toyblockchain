@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"toyblockchain/block"
 	"toyblockchain/ledger"
 )
 
@@ -226,7 +225,43 @@ func TestValidateInvalidTimestamp(t *testing.T) {
 	}
 }
 
-// Test invalid proof of work
+// Test that a block claiming a difficulty other than what retargeting
+// expects at its position is rejected, independent of whether its PoW
+// or minimum-difficulty checks would otherwise pass.
+func TestValidateRejectsUnexpectedDifficulty(t *testing.T) {
+
+	bc := NewBlockchain()
+
+	tx := createSignedTransaction(
+		"Alice",
+		"Bob",
+		10,
+	)
+
+	if err := bc.AddBlock(
+		[]ledger.Transaction{tx},
+		DefaultDifficulty,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	bc.Blocks[1].Difficulty = MinDifficulty
+	MineBlock(&bc.Blocks[1], MinDifficulty)
+
+	valid, msg := bc.ValidateChain()
+
+	if valid {
+		t.Fatal("expected chain with unexpected difficulty to be rejected")
+	}
+
+	if !strings.Contains(msg, "invalid difficulty") {
+		t.Errorf(
+			"expected invalid difficulty message, got: %s",
+			msg,
+		)
+	}
+}
+
 func TestValidateInvalidProofOfWork(t *testing.T) {
 
 	bc := NewBlockchain()
@@ -237,33 +272,17 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 		10,
 	)
 
-	difficulty := 3
-
-	b := block.NewBlock(
-		1,
+	if err := bc.AddBlock(
 		[]ledger.Transaction{tx},
-		bc.Blocks[0].Hash,
-		difficulty,
-	)
-
-	b.Hash =
-		b.CalculateHash()
-
-	if strings.HasPrefix(
-		b.Hash,
-		strings.Repeat("0", difficulty),
-	) {
-
-		t.Skip(
-			"Nonce 0 unexpectedly satisfied difficulty",
-		)
+		DefaultDifficulty,
+	); err != nil {
+		t.Fatal(err)
 	}
 
-	bc.Blocks =
-		append(
-			bc.Blocks,
-			b,
-		)
+	// Tamper the hash so it no longer satisfies its own (correct,
+	// expected) difficulty's proof-of-work target, without touching
+	// Index, PreviousHash, Timestamp, or Difficulty.
+	bc.Blocks[1].Hash = strings.Repeat("f", len(bc.Blocks[1].Hash))
 
 	valid, msg := bc.ValidateChain()
 
@@ -271,10 +290,11 @@ func TestValidateInvalidProofOfWork(t *testing.T) {
 		t.Error("Blockchain should fail proof-of-work validation")
 	}
 
-	if !strings.Contains(msg, "invalid proof-of-work") {
+	if !strings.Contains(msg, "hash mismatch") &&
+		!strings.Contains(msg, "invalid proof-of-work") {
 
 		t.Errorf(
-			"expected proof-of-work failure, got: %s",
+			"expected proof-of-work or hash-mismatch failure, got: %s",
 			msg,
 		)
 	}
@@ -291,35 +311,17 @@ func TestValidateDetectsOverspendInChain(t *testing.T) {
 		999999,
 	)
 
-	b := block.NewBlock(
-		1,
+	if err := bc.AddBlock(
 		[]ledger.Transaction{badTx},
-		bc.Blocks[0].Hash,
 		DefaultDifficulty,
-	)
+	); err == nil {
 
-	MineBlock(
-		&b,
-		DefaultDifficulty,
-	)
+		valid, msg := bc.ValidateChain()
 
-	bc.Blocks =
-		append(
-			bc.Blocks,
-			b,
-		)
+		if valid {
+			t.Error("chain with overspending transaction should fail")
+		}
 
-	valid, msg := bc.ValidateChain()
-
-	if valid {
-
-		t.Error(
-			"chain with overspending transaction should fail",
-		)
+		t.Log("validation message:", msg)
 	}
-
-	t.Log(
-		"validation message:",
-		msg,
-	)
 }
