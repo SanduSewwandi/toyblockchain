@@ -54,3 +54,8 @@ tx_a2.json
 tx_b2.json
 fork_final_chain.json
 EOF
+
+tx_gossip.json
+.gossip_8001.pid
+.gossip_8002.pid
+.gossip_8003.pid
