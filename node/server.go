@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"toyblockchain/block"
 )
 
 // Server represents the HTTP server for a blockchain node.
@@ -38,6 +40,12 @@ func NewServer(n *Node, address string) *Server {
 	mux.HandleFunc("/transactions", s.handleTransactions)
 	mux.HandleFunc("/blocks", s.handleBlocks)
 	mux.HandleFunc("/mine", s.handleMine)
+
+	// Merkle inclusion proof endpoint. Registered before the generic
+	// "/blocks/" subtree route below, since Go's ServeMux resolves the
+	// more specific pattern first regardless of registration order,
+	// but keeping it here documents that ordering intent.
+	mux.HandleFunc("GET /blocks/{index}/proof/{txIndex}", s.handleMerkleProof)
 
 	mux.HandleFunc("/blocks/", s.handleBlockByIndex)
 
@@ -150,6 +158,42 @@ func (s *Server) handleBlockByIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, b)
+}
+
+// Merkle inclusion proof endpoint: GET /blocks/{index}/proof/{txIndex}.
+// Proves a single transaction was included in a specific block without
+// requiring the caller to have the block's full transaction list.
+func (s *Server) handleMerkleProof(w http.ResponseWriter, r *http.Request) {
+
+	blockIndex, err := strconv.Atoi(r.PathValue("index"))
+	if err != nil || blockIndex < 0 {
+		writeJSONError(w, http.StatusBadRequest, "invalid block index")
+		return
+	}
+
+	txIndex, err := strconv.Atoi(r.PathValue("txIndex"))
+	if err != nil || txIndex < 0 {
+		writeJSONError(w, http.StatusBadRequest, "invalid transaction index")
+		return
+	}
+
+	b, ok := s.Node.BlockAt(blockIndex)
+	if !ok {
+		writeJSONError(
+			w,
+			http.StatusNotFound,
+			fmt.Sprintf("block %d not found", blockIndex),
+		)
+		return
+	}
+
+	proof, err := block.GenerateMerkleProof(b.Transactions, txIndex)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, proof)
 }
 
 func (s *Server) handlePeers(w http.ResponseWriter, r *http.Request) {
