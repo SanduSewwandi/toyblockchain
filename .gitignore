@@ -59,3 +59,8 @@ tx_gossip.json
 .gossip_8001.pid
 .gossip_8002.pid
 .gossip_8003.pid
+
+
+tx2.json
+tx3.json
+tx4.json
