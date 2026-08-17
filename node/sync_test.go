@@ -8,8 +8,6 @@ import (
 	"toyblockchain/ledger"
 )
 
-
-
 func TestTransactionGossipPropagatesToPeer(t *testing.T) {
 
 	nodes, _, testServers := startCluster(t, 2)
@@ -160,8 +158,6 @@ func TestFetchPeerBlockReturnsRequestedBlock(t *testing.T) {
 	}
 }
 
-
-
 func TestSyncFromPeerCatchesUpNewNode(t *testing.T) {
 
 	existing := NewNode("", nil)
@@ -198,7 +194,6 @@ func TestSyncFromPeerCatchesUpNewNode(t *testing.T) {
 		t.Fatal("expected head hashes to match after sync")
 	}
 }
-
 
 func TestForkConvergenceAndOrphanTransactionRecovery(t *testing.T) {
 

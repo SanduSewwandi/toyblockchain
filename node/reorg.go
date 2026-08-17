@@ -6,7 +6,6 @@ import (
 	"toyblockchain/block"
 )
 
-
 func (n *Node) HandleUnexpectedBlock(b block.Block, fromPeer string) {
 
 	if fromPeer == "" {

@@ -107,7 +107,6 @@ func (n *Node) ChainSnapshot() []block.Block {
 	return snapshot
 }
 
-
 func (n *Node) BlockAt(index int) (block.Block, bool) {
 
 	n.mu.RLock()

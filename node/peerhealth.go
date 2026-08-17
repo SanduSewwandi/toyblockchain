@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-
 const maxPeerFailures = 3
 
 var peerHealthHTTPClient = &http.Client{
@@ -73,7 +72,6 @@ func checkPeerHealth(peer string) bool {
 
 	return resp.StatusCode == http.StatusOK
 }
-
 
 func (n *Node) RunPeerHealthCheck(failures map[string]int) {
 

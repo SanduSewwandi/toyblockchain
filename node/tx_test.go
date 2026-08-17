@@ -103,8 +103,6 @@ func TestSenderAddressDerivedFromPublicKeyInAcceptedTransaction(t *testing.T) {
 	}
 }
 
-
-
 func TestAddTransactionRejectsEmptySender(t *testing.T) {
 
 	n := NewNode(":0", nil)

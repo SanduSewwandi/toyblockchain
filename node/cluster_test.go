@@ -11,7 +11,6 @@ import (
 	"toyblockchain/ledger"
 )
 
-
 func startCluster(t *testing.T, n int) ([]*Node, []*Server, []*httptest.Server) {
 	t.Helper()
 

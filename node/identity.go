@@ -9,12 +9,10 @@ import (
 	"toyblockchain/crypto"
 )
 
-
 type storedIdentity struct {
 	PublicKey  string `json:"public_key"`
 	PrivateKey string `json:"private_key"`
 }
-
 
 func LoadOrCreateIdentity(path string) (crypto.KeyPair, error) {
 
@@ -68,7 +66,6 @@ func saveIdentity(path string, kp crypto.KeyPair) error {
 
 	return writeIdentityFileAtomic(path, data)
 }
-
 
 func writeIdentityFileAtomic(filename string, data []byte) error {
 

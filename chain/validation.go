@@ -112,7 +112,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
-		
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {

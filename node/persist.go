@@ -4,7 +4,6 @@ import (
 	"toyblockchain/chain"
 )
 
-
 func (n *Node) SaveChainTo(path string) error {
 
 	blocks := n.ChainSnapshot()

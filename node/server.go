@@ -38,7 +38,6 @@ func NewServer(n *Node, address string) *Server {
 	mux.HandleFunc("/transactions", s.handleTransactions)
 	mux.HandleFunc("/blocks", s.handleBlocks)
 
-	
 	mux.HandleFunc("/blocks/", s.handleBlockByIndex)
 
 	s.httpServer = &http.Server{

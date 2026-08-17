@@ -31,7 +31,6 @@ func newSignedTx(t *testing.T, sender, receiver string, amount int64) ledger.Tra
 	return tx
 }
 
-
 func mineNextBlock(t *testing.T, n *Node, txs []ledger.Transaction) block.Block {
 	t.Helper()
 

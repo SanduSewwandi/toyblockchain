@@ -165,7 +165,6 @@ func (n *Node) SyncFromPeer(peer string) (SyncResult, error) {
 	return n.syncFullChainFromPeer(peer)
 }
 
-
 func (n *Node) syncMissingBlocksFromPeer(peer string, localHeight, peerHeight int) (SyncResult, error) {
 
 	fetched := 0
@@ -214,7 +213,6 @@ func (n *Node) syncMissingBlocksFromPeer(peer string, localHeight, peerHeight in
 		),
 	}, nil
 }
-
 
 func (n *Node) syncFullChainFromPeer(peer string) (SyncResult, error) {
 
@@ -266,7 +264,6 @@ func (n *Node) syncFullChainFromPeer(peer string) (SyncResult, error) {
 		}, nil
 	}
 
-	
 	newHashes := make(map[string]bool, len(n.Blockchain.Blocks))
 
 	for _, b := range n.Blockchain.Blocks {

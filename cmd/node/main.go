@@ -50,7 +50,6 @@ func main() {
 		"how often this node checks peer health and exchanges peer lists",
 	)
 
-	
 	dataFlag := flag.String(
 		"data",
 		"",
@@ -113,7 +112,6 @@ func main() {
 		keyFile,
 	)
 
-	
 	bc, err := chain.LoadFromFile(dataFile)
 	if err != nil {
 		log.Fatalf("failed to load blockchain: %v", err)
@@ -134,7 +132,6 @@ func main() {
 	// centralized route and handler implementation.
 	server := node.NewServer(n, *addr)
 
-	
 	stop := make(chan os.Signal, 1)
 
 	signal.Notify(
@@ -206,10 +203,8 @@ func main() {
 		}, stopMining)
 	}
 
-	
 	go n.StartPeerHealthLoop(*peerHealthInterval, stopMining)
 
-	
 	go func() {
 		ticker := time.NewTicker(*persistInterval)
 		defer ticker.Stop()
@@ -237,7 +232,6 @@ func main() {
 		log.Fatalf("server error: %v", err)
 	}
 }
-
 
 func sanitizeAddr(addr string) string {
 	replacer := strings.NewReplacer(":", "_", "/", "_")

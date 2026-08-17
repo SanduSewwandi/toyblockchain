@@ -56,8 +56,6 @@ func TestAddBlockRemovesMinedTransactionFromPending(t *testing.T) {
 	}
 }
 
-
-
 func TestAddBlockDoesNotMarkNonExtendingBlockAsSeen(t *testing.T) {
 
 	n := NewNode(":0", nil)
@@ -129,7 +127,6 @@ func TestAddBlockDeduplicatesAcceptedBlock(t *testing.T) {
 		t.Fatalf("expected height to remain 1 after a duplicate submission, got %d", n.Height())
 	}
 }
-
 
 func TestAddBlockRejectsBlockBelowExpectedDifficulty(t *testing.T) {
 

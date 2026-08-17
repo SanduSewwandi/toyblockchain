@@ -40,7 +40,6 @@ func (l *Ledger) Debit(user string, amount int64) error {
 	return nil
 }
 
-
 func (l *Ledger) ApplyTransaction(tx Transaction) error {
 
 	if tx.Amount <= 0 {

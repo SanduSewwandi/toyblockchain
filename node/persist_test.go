@@ -38,7 +38,6 @@ func TestSaveChainToPersistsCurrentChain(t *testing.T) {
 	}
 }
 
-
 func TestReloadedChainMatchesSavedChain(t *testing.T) {
 
 	n := NewNode("", nil)

@@ -9,7 +9,6 @@ import (
 	"toyblockchain/crypto"
 )
 
-
 const DefaultWalletFile = "wallet.json"
 
 // storedKeyPair is the JSON-serializable form of a crypto.KeyPair.

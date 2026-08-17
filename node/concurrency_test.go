@@ -10,7 +10,6 @@ import (
 	"toyblockchain/ledger"
 )
 
-
 func TestConcurrentMiningGossipAndReadsAreRaceFree(t *testing.T) {
 
 	if testing.Short() {

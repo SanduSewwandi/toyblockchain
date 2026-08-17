@@ -38,7 +38,6 @@ func (n *Node) AddBlock(b block.Block) (AddBlockResult, error) {
 	if b.Index == latest.Index+1 &&
 		b.PreviousHash == latest.Hash {
 
-		
 		expectedDifficulty := chain.NextDifficultyFor(
 			n.Blockchain,
 			chain.DefaultDifficulty,
