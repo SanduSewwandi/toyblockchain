@@ -37,6 +37,7 @@ func NewServer(n *Node, address string) *Server {
 
 	mux.HandleFunc("/transactions", s.handleTransactions)
 	mux.HandleFunc("/blocks", s.handleBlocks)
+	mux.HandleFunc("/mine", s.handleMine)
 
 	mux.HandleFunc("/blocks/", s.handleBlockByIndex)
 
