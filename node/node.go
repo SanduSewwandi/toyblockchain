@@ -106,3 +106,16 @@ func (n *Node) ChainSnapshot() []block.Block {
 
 	return snapshot
 }
+
+
+func (n *Node) BlockAt(index int) (block.Block, bool) {
+
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if index < 0 || index >= len(n.Blockchain.Blocks) {
+		return block.Block{}, false
+	}
+
+	return n.Blockchain.Blocks[index], true
+}

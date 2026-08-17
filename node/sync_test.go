@@ -8,8 +8,7 @@ import (
 	"toyblockchain/ledger"
 )
 
-// FR-3 acceptance criterion: a transaction submitted to node A
-// appears in node B's pending pool.
+
 
 func TestTransactionGossipPropagatesToPeer(t *testing.T) {
 
@@ -36,7 +35,7 @@ func TestTransactionGossipPropagatesToPeer(t *testing.T) {
 	}
 }
 
-// FR-3: gossip de-duplication holds across the network, not just
+//  gossip de-duplication holds across the network, not just
 // within a single node's AddTransaction call.
 
 func TestTransactionGossipDeduplicatesAcrossNetwork(t *testing.T) {
@@ -70,7 +69,7 @@ func TestTransactionGossipDeduplicatesAcrossNetwork(t *testing.T) {
 	}
 }
 
-// FR-4 acceptance criterion: node A mines and broadcasts a block,
+// acceptance criterion: node A mines and broadcasts a block,
 // node B validates it and its height increases by one.
 
 func TestBlockGossipPropagatesToPeer(t *testing.T) {
@@ -99,8 +98,69 @@ func TestBlockGossipPropagatesToPeer(t *testing.T) {
 	}
 }
 
-// FR-5 acceptance criterion: a new node with only the genesis block
-// syncs the full chain from an existing peer.
+//  GET /height returns the peer's current chain height, the first
+// step of incremental synchronisation.
+
+func TestFetchPeerHeightReturnsCurrentHeight(t *testing.T) {
+
+	existing := NewNode("", nil)
+
+	for i := 0; i < 3; i++ {
+		b := mineNextBlock(t, existing, nil)
+
+		if result, err := existing.AddBlock(b); !result.Accepted || err != nil {
+			t.Fatalf("setup: failed to build chain: result=%+v err=%v", result, err)
+		}
+	}
+
+	srv := NewServer(existing, "")
+	ts := newRunningTestServer(t, srv)
+	existing.Address = ts.Listener.Addr().String()
+
+	height, err := FetchPeerHeight(existing.Address)
+
+	if err != nil {
+		t.Fatalf("unexpected error fetching peer height: %v", err)
+	}
+
+	if height != existing.Height() {
+		t.Fatalf("expected fetched height %d to match peer's actual height %d", height, existing.Height())
+	}
+}
+
+//  GET /blocks/{index} serves a single block by index, and returns
+// 404 for an index that doesn't exist yet.
+
+func TestFetchPeerBlockReturnsRequestedBlock(t *testing.T) {
+
+	existing := NewNode("", nil)
+
+	b := mineNextBlock(t, existing, nil)
+
+	if result, err := existing.AddBlock(b); !result.Accepted || err != nil {
+		t.Fatalf("setup: failed to add block: result=%+v err=%v", result, err)
+	}
+
+	srv := NewServer(existing, "")
+	ts := newRunningTestServer(t, srv)
+	existing.Address = ts.Listener.Addr().String()
+
+	fetched, err := FetchPeerBlock(existing.Address, 1)
+
+	if err != nil {
+		t.Fatalf("unexpected error fetching block 1: %v", err)
+	}
+
+	if fetched.Hash != b.Hash {
+		t.Fatalf("expected fetched block hash %s to match original %s", fetched.Hash, b.Hash)
+	}
+
+	if _, err := FetchPeerBlock(existing.Address, 99); err == nil {
+		t.Fatal("expected an error fetching a block index that doesn't exist")
+	}
+}
+
+
 
 func TestSyncFromPeerCatchesUpNewNode(t *testing.T) {
 
@@ -138,7 +198,6 @@ func TestSyncFromPeerCatchesUpNewNode(t *testing.T) {
 		t.Fatal("expected head hashes to match after sync")
 	}
 }
-
 
 
 func TestForkConvergenceAndOrphanTransactionRecovery(t *testing.T) {
@@ -199,7 +258,6 @@ func TestForkConvergenceAndOrphanTransactionRecovery(t *testing.T) {
 		t.Fatal("expected both nodes to converge on the same head hash")
 	}
 
-	
 	if nodeA.PendingCount() != 1 {
 		t.Fatalf("expected the orphaned transaction to return to the pending pool, got %d pending", nodeA.PendingCount())
 	}

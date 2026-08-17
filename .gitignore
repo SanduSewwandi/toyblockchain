@@ -24,3 +24,11 @@ retarget-test.json
 candidate 
 candidate.json
 current_backup.json
+
+docs/README-round1.md
+report-round1.md
+
+logs
+node-8001.log
+node-8002.log
+node-8003.log

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,6 +37,9 @@ func NewServer(n *Node, address string) *Server {
 
 	mux.HandleFunc("/transactions", s.handleTransactions)
 	mux.HandleFunc("/blocks", s.handleBlocks)
+
+	
+	mux.HandleFunc("/blocks/", s.handleBlockByIndex)
 
 	s.httpServer = &http.Server{
 		Addr:              address,
@@ -118,6 +123,37 @@ func (s *Server) handleChain(w http.ResponseWriter, r *http.Request) {
 	blocks := s.Node.ChainSnapshot()
 
 	writeJSON(w, http.StatusOK, blocks)
+}
+
+// Block-by-index endpoint (FR-5): serves a single block, e.g.
+// GET /blocks/3. This is the per-block fetch used by incremental sync,
+// distinct from the bulk chain dump above and from POST /blocks (block
+// gossip), which are handled separately.
+func (s *Server) handleBlockByIndex(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	indexStr := strings.TrimPrefix(r.URL.Path, "/blocks/")
+
+	index, err := strconv.Atoi(indexStr)
+	if err != nil || index < 0 {
+		writeJSONError(w, http.StatusBadRequest, "invalid block index")
+		return
+	}
+
+	b, ok := s.Node.BlockAt(index)
+	if !ok {
+		writeJSONError(
+			w,
+			http.StatusNotFound,
+			fmt.Sprintf("block %d not found", index),
+		)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, b)
 }
 
 // Peers endpoint
