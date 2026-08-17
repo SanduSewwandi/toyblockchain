@@ -1,5 +1,0 @@
-2026/08/12 16:21:24 node listening on localhost:8001, peers=[localhost:8002 localhost:8003]
-GET /chain 200 76.489µs
-GET /chain 200 36.527µs
-GET /health 200 84.994µs
-GET /status 200 143.656µs
