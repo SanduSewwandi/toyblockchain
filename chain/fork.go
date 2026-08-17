@@ -1,17 +1,39 @@
 package chain
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
 
-func ChainWork(bc *Blockchain) int {
+	"toyblockchain/block"
+)
 
-	work := 0
 
-	for _, b := range bc.Blocks {
-		work += b.Difficulty
+func blockWork(difficulty int) *big.Int {
+
+	if difficulty < 0 {
+		return big.NewInt(0)
 	}
 
-	return work
+	return new(big.Int).Lsh(big.NewInt(1), uint(difficulty))
 }
+
+// ChainWork returns the total cumulative proof-of-work for a
+// blockchain, summing 2^difficulty across every block.
+func ChainWork(bc *Blockchain) *big.Int {
+
+	total := big.NewInt(0)
+
+	if bc == nil {
+		return total
+	}
+
+	for _, b := range bc.Blocks {
+		total.Add(total, blockWork(b.Difficulty))
+	}
+
+	return total
+}
+
 
 func (bc *Blockchain) ResolveFork(candidate *Blockchain) (bool, string) {
 
@@ -31,39 +53,60 @@ func (bc *Blockchain) ResolveFork(candidate *Blockchain) (bool, string) {
 		return false, "candidate chain rejected: different genesis block"
 	}
 
-	currentLen := len(bc.Blocks)
-	candidateLen := len(candidate.Blocks)
+	currentWork := ChainWork(bc)
+	candidateWork := ChainWork(candidate)
+
+	cmp := candidateWork.Cmp(currentWork)
 
 	accept := false
+	tieBroken := false
 
 	switch {
 
-	case candidateLen > currentLen:
+	case cmp > 0:
 		accept = true
 
-	case candidateLen == currentLen:
-		accept = ChainWork(candidate) > ChainWork(bc)
+	case cmp == 0:
+		// Deterministic tie-breaker: smaller final block hash wins.
+		currentHead := bc.Blocks[len(bc.Blocks)-1].Hash
+		candidateHead := candidate.Blocks[len(candidate.Blocks)-1].Hash
 
+		if candidateHead < currentHead {
+			accept = true
+			tieBroken = true
+		}
 	}
 
 	if !accept {
 
 		return false, fmt.Sprintf(
-			"candidate chain rejected: not longer and not more work (candidate: %d blocks / %d work, current: %d blocks / %d work)",
-			candidateLen,
-			ChainWork(candidate),
-			currentLen,
-			ChainWork(bc),
+			"candidate chain rejected: not more work and lost tie-break (candidate: %d blocks / work %s, current: %d blocks / work %s)",
+			len(candidate.Blocks),
+			candidateWork.String(),
+			len(bc.Blocks),
+			currentWork.String(),
 		)
 	}
 
-	previousLength := currentLen
+	previousLength := len(bc.Blocks)
+	previousWork := currentWork
 
-	bc.Blocks = candidate.Blocks
+	// Copy rather than alias candidate.Blocks, so later mutation of the
+	// candidate object (e.g. by a caller reusing it) can't silently
+	// corrupt this chain's blocks through a shared backing array.
+	bc.Blocks = append([]block.Block(nil), candidate.Blocks...)
 
-	return true, fmt.Sprintf(
-		"candidate chain accepted: replaced %d-block chain with %d-block chain",
+	reason := fmt.Sprintf(
+		"candidate chain accepted: replaced %d-block chain (work %s) with %d-block chain (work %s)",
 		previousLength,
-		candidateLen,
+		previousWork.String(),
+		len(bc.Blocks),
+		candidateWork.String(),
 	)
+
+	if tieBroken {
+		reason += " [tie-break on final block hash]"
+	}
+
+	return true, reason
 }
