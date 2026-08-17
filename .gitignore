@@ -45,3 +45,12 @@ node-8003.log
 tx.json
 tx_a.json
 tx_b.json
+
+# Fork-experiment wallet (contains private keys, never commit)
+fork_wallet.json
+
+# More fork-experiment scratch transaction files
+tx_a2.json
+tx_b2.json
+fork_final_chain.json
+EOF
