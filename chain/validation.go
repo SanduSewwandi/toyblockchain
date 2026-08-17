@@ -25,9 +25,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 
 		current := bc.Blocks[i]
 
-		
 		// Basic difficulty validation
-		
 
 		if current.Difficulty < MinDifficulty {
 
@@ -37,9 +35,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		// Verify Merkle root
-		
 
 		expectedMerkleRoot := block.MerkleRoot(
 			current.Transactions,
@@ -53,9 +49,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		// Verify stored hash
-		
+
 		if current.CalculateHash() != current.Hash {
 
 			return false, fmt.Sprintf(
@@ -64,9 +59,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			)
 		}
 
-		
 		// Genesis block validation
-		
+
 		if i == 0 {
 
 			// Genesis must always have index 0.
@@ -83,15 +77,11 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 					"Genesis block has invalid previous hash"
 			}
 
-			
-
 		} else {
 
 			previous := bc.Blocks[i-1]
 
-			
 			// Previous hash connection
-			
 
 			if current.PreviousHash != previous.Hash {
 
@@ -101,9 +91,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			
 			// Block index
-			
+
 			if current.Index != previous.Index+1 {
 
 				return false, fmt.Sprintf(
@@ -112,7 +101,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			
 			// Timestamp
 			if current.Timestamp < previous.Timestamp {
 
@@ -122,7 +110,6 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			
 			// Difficulty validation
 
 			history := &Blockchain{
@@ -144,9 +131,7 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 				)
 			}
 
-			
 			// Proof of Work
-			
 
 			target := strings.Repeat(
 				"0",
@@ -165,9 +150,8 @@ func (bc *Blockchain) ValidateChain() (bool, string) {
 			}
 		}
 
-		
 		// Ledger validation
-		
+
 		for _, tx := range current.Transactions {
 
 			if err := ld.ApplyTransaction(tx); err != nil {
