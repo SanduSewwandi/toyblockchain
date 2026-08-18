@@ -214,6 +214,10 @@ func (n *Node) syncMissingBlocksFromPeer(peer string, localHeight, peerHeight in
 	}, nil
 }
 
+// FR-6: full chain reorganisation. Snapshots the current chain, hands
+// off to chain.ResolveFork to pick the heavier side, then rebuilds
+// ledger state and returns any now-orphaned transactions to the
+// pending pool.
 func (n *Node) syncFullChainFromPeer(peer string) (SyncResult, error) {
 
 	remoteBlocks, err := FetchPeerChain(peer)

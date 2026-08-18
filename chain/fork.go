@@ -34,6 +34,10 @@ func ChainWork(bc *Blockchain) *big.Int {
 	return total
 }
 
+// FR-6: fork resolution — when a competing chain carries more
+// cumulative work, adopt it. The caller (see node.syncFullChainFromPeer)
+// is responsible for rebuilding ledger state and returning orphaned
+// transactions to the pending pool after the swap.
 func (bc *Blockchain) ResolveFork(candidate *Blockchain) (bool, string) {
 
 	if candidate == nil || len(candidate.Blocks) == 0 {

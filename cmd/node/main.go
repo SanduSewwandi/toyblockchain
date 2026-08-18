@@ -19,6 +19,8 @@ import (
 	"toyblockchain/node"
 )
 
+// FR-1: each node runs as an independent process exposing an HTTP API,
+// with its listen address and initial peer list configured via flags.
 func main() {
 	addr := flag.String(
 		"addr",

@@ -10,6 +10,11 @@ import (
 )
 
 type Node struct {
+	// FR-7: mu guards Blockchain, Pending, Peers, seenTx, and
+	// seenBlocks below. Every read or write to these fields — from
+	// HTTP handlers, the mining loop, and gossip — must hold this
+	// lock, so the suite passes go test -race ./...
+
 	mu sync.RWMutex
 
 	Blockchain *chain.Blockchain
@@ -22,8 +27,9 @@ type Node struct {
 	Address string
 }
 
-// NewNode creates a node with a fresh genesis blockchain and the given
-// listen address and initial peer list.
+// FR-1: Node is the networked service each process runs — one node,
+// one address, its own peer list, so several instances can run side
+// by side on different ports.
 func NewNode(address string, initialPeers []string) *Node {
 
 	peers := make(map[string]bool)
