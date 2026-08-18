@@ -1,0 +1,91 @@
+version: "3.9"
+
+# Brings up a 3-node toyblockchain cluster. Nodes talk to each other over
+# the internal "chainnet" network using their compose service names, and
+# are each also published to a distinct host port for manual curl/testing.
+#
+# Usage:
+#   docker compose up --build
+#   curl localhost:8001/status
+#   curl localhost:8002/status
+#   curl localhost:8003/status
+#
+# Stop and wipe all chain/identity state:
+#   docker compose down -v
+
+services:
+  node1:
+    build: .
+    container_name: toyblockchain-node1
+    command:
+      - "-addr=:8000"
+      - "-peers=node2:8000,node3:8000"
+      - "-data=/app/node_data/chain.json"
+      - "-keyfile=/app/node_data/identity.json"
+      - "-mine-interval=5s"
+    ports:
+      - "8001:8000"
+    volumes:
+      - node1_data:/app/node_data
+    networks:
+      - chainnet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  node2:
+    build: .
+    container_name: toyblockchain-node2
+    command:
+      - "-addr=:8000"
+      - "-peers=node1:8000,node3:8000"
+      - "-data=/app/node_data/chain.json"
+      - "-keyfile=/app/node_data/identity.json"
+      - "-mine-interval=5s"
+    ports:
+      - "8002:8000"
+    volumes:
+      - node2_data:/app/node_data
+    networks:
+      - chainnet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      - node1
+
+  node3:
+    build: .
+    container_name: toyblockchain-node3
+    command:
+      - "-addr=:8000"
+      - "-peers=node1:8000,node2:8000"
+      - "-data=/app/node_data/chain.json"
+      - "-keyfile=/app/node_data/identity.json"
+      - "-mine-interval=5s"
+    ports:
+      - "8003:8000"
+    volumes:
+      - node3_data:/app/node_data
+    networks:
+      - chainnet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      - node1
+
+volumes:
+  node1_data:
+  node2_data:
+  node3_data:
+
+networks:
+  chainnet:
+    driver: bridge

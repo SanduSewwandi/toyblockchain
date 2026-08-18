@@ -1,0 +1,12 @@
+bin/
+logs/
+node_data/
+*.log
+.git/
+.cluster_pids
+blockchain.json
+pending.json
+wallet.json
+test_blockchain.json
+test_pending.json
+test_wallet.json
